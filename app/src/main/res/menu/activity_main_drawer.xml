@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="utf-8"?>
+<menu xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <group
+        android:id="@+id/main_drawer_group1"
+        android:checkableBehavior="single">
+        <item
+            android:id="@+id/nav_categories"
+            android:icon="@drawable/ic_table_black_24dp"
+            android:checked="true"
+            android:title="@string/nav_categories" />
+        <item
+            android:id="@+id/nav_teachers"
+            android:icon="@drawable/ic_school_black_24dp"
+            android:title="@string/nav_teachers" />
+    </group>
+
+    <group android:id="@+id/main_drawer_group2">
+        <item
+            android:id="@+id/nav_settings"
+            android:icon="@drawable/ic_settings_black_24dp"
+            android:title="@string/action_settings" />
+        <item
+            android:id="@+id/nav_info"
+            android:icon="@drawable/ic_info_black_24dp"
+            android:title="@string/nav_info" />
+        <item
+            android:id="@+id/nav_exit"
+            android:icon="@drawable/ic_exit_to_app_black_24dp"
+            android:title="@string/nav_exit" />
+    </group>
+
+</menu>

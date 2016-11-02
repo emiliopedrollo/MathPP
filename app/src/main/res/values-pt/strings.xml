@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">AppPet</string>
+    <string name="action_add_question">Perguntar</string>
+    <string name="action_refresh">Atualizar</string>
+    <string name="action_search">Pesquisar</string>
+    <string name="action_settings">Opções</string>
+    <string name="user_asked">%1$s pergunta:</string>
+    <string name="user_responded">%1$s responde:</string>
+    <string name="undo">Desfazer</string>
+    <string name="unable_retrieve_categories">Não foi possível baixar categorias do servidor.</string>
+    <string name="star"></string>
+</resources>

@@ -1,0 +1,48 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    tools:targetApi="lollipop"
+    android:background="@android:color/white"
+    android:elevation="5dp"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent">
+
+    <ImageView
+        android:id="@+id/category_grid_item_image"
+        android:contentDescription="@string/category_image"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:scaleType="fitXY"
+        android:adjustViewBounds="true" >
+    </ImageView>
+
+    <RelativeLayout
+        android:layout_alignBottom="@id/category_grid_item_image"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content">
+        <View
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:layout_alignBottom="@+id/category_grid_item_name"
+            android:layout_alignParentLeft="true"
+            android:layout_alignParentStart="true"
+            android:layout_alignParentRight="true"
+            android:layout_alignParentEnd="true"
+            android:layout_alignParentTop="true"
+            android:background="@color/colorPrimary"
+            android:alpha="0.8"/>
+        <TextView
+            android:id="@+id/category_grid_item_name"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:textSize="15sp"
+            android:gravity="bottom|center_horizontal"
+            android:padding="8dp"
+            android:textColor="@color/text_color"
+            tools:text="Teste aqui\nDuas linhas"
+            >
+        </TextView>
+    </RelativeLayout>
+
+</RelativeLayout>
