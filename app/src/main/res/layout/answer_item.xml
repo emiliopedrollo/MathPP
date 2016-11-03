@@ -39,6 +39,7 @@
                         android:orientation="horizontal">
 
                         <ImageView
+                            android:id="@+id/answer_item_author_icon"
                             android:contentDescription="@string/icon_student"
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
@@ -93,7 +94,7 @@
                         android:background="?android:attr/selectableItemBackgroundBorderless"/>
 
                     <TextView
-                        android:id="@+id/question_answer_number"
+                        android:id="@+id/answer_item_score"
                         tools:text="2"
                         android:textSize="24sp"
                         android:layout_width="wrap_content"
@@ -114,6 +115,8 @@
             </LinearLayout>
 
             <LinearLayout
+                android:id="@+id/answer_item_body"
+                android:orientation="vertical"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:paddingStart="16dp"
@@ -122,17 +125,6 @@
                 android:paddingEnd="16dp"
                 android:paddingBottom="16dp"
                 android:clipToPadding="false">
-
-                <TextView
-                    android:id="@+id/answer_item_text"
-                    tools:text="@string/lipsum"
-                    android:textSize="14sp"
-                    android:textColor="@android:color/secondary_text_light"
-                    android:fontFamily="sans-serif"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:layout_marginTop="8dp"
-                    android:gravity="start|center_vertical"/>
 
             </LinearLayout>
 

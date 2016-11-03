@@ -10,9 +10,9 @@
             android:checked="true"
             android:title="@string/nav_categories" />
         <item
-            android:id="@+id/nav_teachers"
-            android:icon="@drawable/ic_school_black_24dp"
-            android:title="@string/nav_teachers" />
+            android:id="@+id/nav_favorites"
+            android:icon="@drawable/ic_star_black_24dp"
+            android:title="@string/nav_favorites" />
     </group>
 
     <group android:id="@+id/main_drawer_group2">

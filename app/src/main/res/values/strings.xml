@@ -9,10 +9,12 @@
     <string name="action_add_question">Ask Question</string>
     <string name="action_search">Search</string>
 
+    <string name="not_available_yet">Not available Yet</string>
+
     <string name="build_version" translatable="false">Build %1$s</string>
 
     <string name="nav_categories">Categories</string>
-    <string name="nav_teachers">Teachers</string>
+    <string name="nav_favorites">Favorites</string>
     <string name="nav_settings">Settings</string>
     <string name="nav_info">Info</string>
     <string name="nav_exit">Exit</string>
@@ -21,10 +23,19 @@
 
     <string name="no_internet_connection">No internet connection!</string>
     <string name="unable_retrieve_categories">Unable to retrieve categories from server.</string>
+    <string name="unable_retrieve_questions">Unable to retrieve questions from server.</string>
+    <string name="unable_retrieve_answers">Unable to retrieve answers from server.</string>
 
     <string name="category_image">Category image</string>
     <string name="no_categories_available">No categories available</string>
     <string name="loading_categories">Loading categories&#8230;</string>
+
+    <string name="no_questions_available">There are no questions yet</string>
+    <string name="loading_questions">Loading questions&#8230;</string>
+
+    <string name="no_answers_available">There are no answers yet</string>
+    <string name="loading_answers">Loading answers&#8230;</string>
+
     <string name="user_asked">%1$s ask:</string>
     <string name="user_responded">%1$s responds:</string>
 
@@ -60,16 +71,19 @@
     <string name="pref_title_display_name">Display name</string>
     <string name="pref_default_display_name">John Smith</string>
 
-    <string name="pref_title_add_friends_to_messages">Add friends to messages</string>
-    <string-array name="pref_example_list_titles">
-        <item>Always</item>
-        <item>When possible</item>
-        <item>Never</item>
+    <string name="pref_title_email">Email</string>
+    <string name="pref_default_email">example@domain.com</string>
+
+    <string name="pref_title_user_type">User Category</string>
+    <string-array name="pref_user_type_titles">
+        <item>Student</item>
+        <item>Monitor</item>
+        <item>Teacher</item>
     </string-array>
-    <string-array name="pref_example_list_values">
-        <item>1</item>
+    <string-array name="pref_user_type_values">
         <item>0</item>
-        <item>-1</item>
+        <item>1</item>
+        <item>2</item>
     </string-array>
 
     <!-- Example settings for Data & Sync -->
@@ -121,7 +135,7 @@
     <string name="title_activity_write_post">WritePostActivity</string>
 
     <!-- Fetch/Input URL's -->
-    <string name="fetch_hostname" translatable="false">https://emilio.pedrollo.nom.br/apppet</string>
+    <string name="fetch_hostname" translatable="false">https://mathpp.emilio.pedrollo.nom.br/app_dev.php</string>
 
     <string name="categories_fetch_uri" translatable="false">/categories</string>
     <string name="category_fetch_uri" translatable="false">/category/%1$s</string>
@@ -134,5 +148,10 @@
     <string name="answers_fetch_uri" translatable="false">/answers</string>
     <string name="answer_fetch_uri" translatable="false">/answer/%1$s</string>
     <string name="answer_input_uri" translatable="false">/answer</string>
+    <string name="write_title_hint">Title</string>
+    <string name="white_question_hint">Question</string>
+    <string name="new_question">New Question</string>
+    <string name="sending_question_dialog_message">Sending&#8230;</string>
+    <string name="sending_question_dialog_title">Sending your question</string>
 
 </resources>

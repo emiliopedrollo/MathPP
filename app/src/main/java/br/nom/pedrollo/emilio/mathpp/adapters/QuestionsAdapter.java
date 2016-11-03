@@ -5,28 +5,30 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.FrameLayout;
+import android.widget.ImageView;
 import android.widget.TextView;
 
+import java.util.ArrayList;
 import java.util.List;
 
 import br.nom.pedrollo.emilio.mathpp.R;
+import br.nom.pedrollo.emilio.mathpp.entities.Question;
 
 public class QuestionsAdapter extends RecyclerView.Adapter<QuestionsAdapter.ViewHolder> {
 
-    private final List<String> questions;
-    private final List<String> authors;
-    private final List<Integer> answers;
-    private View.OnClickListener clickListener;
-    private View.OnLongClickListener longClickListener;
+//    private View.OnClickListener clickListener;
+//    private View.OnLongClickListener longClickListener;
 
-    public QuestionsAdapter(List<String> questions, List<String> authors, List<Integer> answers){
-        this.questions = questions;
-        this.authors = authors;
-        this.answers = answers;
+    public List<Question> questions;
+    private OnBindViewHolder onBindViewHolder;
+
+    public QuestionsAdapter(){
+        this.questions = new ArrayList<>();
     }
 
-    static class ViewHolder extends RecyclerView.ViewHolder {
+    public static class ViewHolder extends RecyclerView.ViewHolder {
         FrameLayout questionListItem;
+        ImageView authorIcon;
         TextView questionTitle;
         TextView numAnswers;
         TextView questionAuthor;
@@ -36,20 +38,21 @@ public class QuestionsAdapter extends RecyclerView.Adapter<QuestionsAdapter.View
             super(itemView);
             questionListItem = (FrameLayout) itemView;
 
+            authorIcon = (ImageView) questionListItem.findViewById(R.id.question_author_icon);
             questionTitle = (TextView) questionListItem.findViewById(R.id.question_title);
-            numAnswers = (TextView) questionListItem.findViewById(R.id.question_answer_number);
+            numAnswers = (TextView) questionListItem.findViewById(R.id.answer_item_score);
             questionAuthor = (TextView) questionListItem.findViewById(R.id.question_author);
 
         }
     }
 
-    public void setOnItemClickListener(View.OnClickListener clickListener) {
-        this.clickListener = clickListener;
-    }
-
-    public void setOnItemLongClickListener(View.OnLongClickListener longClickListener) {
-        this.longClickListener = longClickListener;
-    }
+//    public void setOnItemClickListener(View.OnClickListener clickListener) {
+//        this.clickListener = clickListener;
+//    }
+//
+//    public void setOnItemLongClickListener(View.OnLongClickListener longClickListener) {
+//        this.longClickListener = longClickListener;
+//    }
 
     @Override
     public ViewHolder onCreateViewHolder(ViewGroup parent, int viewType) {
@@ -58,24 +61,44 @@ public class QuestionsAdapter extends RecyclerView.Adapter<QuestionsAdapter.View
         return (new ViewHolder(view));
     }
 
+    public interface OnBindViewHolder{
+        void onBindViewHolder(ViewHolder holder, int position);
+    }
+
+    public void setOnBindViewHolder(OnBindViewHolder onBindViewHolder){
+        this.onBindViewHolder = onBindViewHolder;
+    }
+
     @Override
     public void onBindViewHolder(ViewHolder holder, int position) {
-        holder.questionListItem.setLongClickable(true);
-        holder.questionListItem.setClickable(true);
+//        holder.questionListItem.setLongClickable(true);
+//        holder.questionListItem.setClickable(true);
 
-        if (clickListener != null)
-            holder.questionListItem.setOnClickListener(clickListener);
-
-        if (longClickListener != null)
-            holder.questionListItem.setOnLongClickListener(longClickListener);
+//        if (clickListener != null)
+//            holder.questionListItem.setOnClickListener(clickListener);
+//
+//        if (longClickListener != null)
+//            holder.questionListItem.setOnLongClickListener(longClickListener);
 
         String userAskString = holder.itemView.getContext().getResources().getString(R.string.user_asked);
 
-        holder.questionTitle.setText(questions.get(position));
-        holder.questionAuthor.setText(String.format(userAskString,authors.get(position)));
-        //holder.questionAuthor.setText(String.format(userAskString,authors.get((new Random()).nextInt(authors.size()))));
-        holder.numAnswers.setText(String.valueOf(answers.get(position)));
+        holder.questionTitle.setText(questions.get(position).getTitle());
+        holder.questionAuthor.setText(String.format(userAskString,questions.get(position).getAuthor()));
+        holder.numAnswers.setText(String.valueOf(questions.get(position).getAnswers()));
 
+        switch (questions.get(position).getAuthorType()){
+            case "student":
+                holder.authorIcon.setImageResource(R.drawable.ic_person_outline_black_24dp);
+                break;
+            case "monitor":
+                holder.authorIcon.setImageResource(R.drawable.ic_person_black_24dp);
+                break;
+            case "teacher":
+                holder.authorIcon.setImageResource(R.drawable.ic_school_black_24dp);
+                break;
+        }
+
+        onBindViewHolder.onBindViewHolder(holder,position);
     }
 
     @Override
@@ -83,15 +106,4 @@ public class QuestionsAdapter extends RecyclerView.Adapter<QuestionsAdapter.View
         return questions.size();
     }
 
-    public List<String> getQuestions() {
-        return questions;
-    }
-
-    public List<String> getAuthors() {
-        return authors;
-    }
-
-    public List<Integer> getAnswers() {
-        return answers;
-    }
 }

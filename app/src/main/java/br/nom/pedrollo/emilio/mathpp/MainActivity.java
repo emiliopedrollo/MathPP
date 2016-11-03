@@ -6,6 +6,7 @@ import android.app.FragmentTransaction;
 import android.app.SearchManager;
 import android.content.Context;
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
 import android.graphics.Color;
 import android.net.ConnectivityManager;
@@ -13,6 +14,7 @@ import android.net.NetworkInfo;
 import android.os.AsyncTask;
 import android.os.Build;
 import android.os.Bundle;
+import android.preference.PreferenceManager;
 import android.support.annotation.NonNull;
 import android.support.design.widget.CoordinatorLayout;
 import android.support.design.widget.FloatingActionButton;
@@ -31,9 +33,12 @@ import android.view.Menu;
 import android.view.MenuItem;
 import android.widget.AdapterView;
 import android.widget.GridView;
+import android.widget.ProgressBar;
+import android.widget.RelativeLayout;
 import android.widget.TextView;
+import android.widget.Toast;
 
-import org.json.JSONArray;
+import org.json.JSONException;
 import org.json.JSONObject;
 
 import java.util.HashMap;
@@ -45,6 +50,8 @@ import br.nom.pedrollo.emilio.mathpp.utils.NetworkUtils;
 
 public class MainActivity extends AppCompatActivity
         implements NavigationView.OnNavigationItemSelectedListener, AdapterView.OnItemClickListener {
+
+    Boolean alreadyLoadedCategoriesOnce = false;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -76,6 +83,7 @@ public class MainActivity extends AppCompatActivity
         NavigationView navigationView = (NavigationView) findViewById(R.id.nav_view);
         navigationView.setNavigationItemSelectedListener(this);
 
+        populateMenuInfo(navigationView);
         populateBuildString();
 
         GridView categoriesGrid = (GridView) findViewById(R.id.categories_grid);
@@ -85,6 +93,13 @@ public class MainActivity extends AppCompatActivity
 
         handleIntent(getIntent());
 
+    }
+
+    @Override
+    protected void onResume() {
+        NavigationView navigationView = (NavigationView) findViewById(R.id.nav_view);
+        populateMenuInfo(navigationView);
+        super.onResume();
     }
 
     @TargetApi(Build.VERSION_CODES.LOLLIPOP)
@@ -126,7 +141,16 @@ public class MainActivity extends AppCompatActivity
         transaction.setCustomAnimations(R.animator.fragment_slide_right_enter, R.animator.fragment_slide_right_exit,
                 R.animator.fragment_slide_right_enter, R.animator.fragment_slide_right_exit);
 
-        transaction.add(R.id.frame_container, new QuestionsListFragment());
+        QuestionsListFragment questionsListFragment = new QuestionsListFragment();
+        GridView categoriesGrid = (GridView) findViewById(R.id.categories_grid);
+        CategoriesAdapter categoriesAdapter = (CategoriesAdapter)categoriesGrid.getAdapter();
+
+        Bundle bundle = new Bundle();
+
+        bundle.putInt(QuestionsListFragment.CATEGORY,categoriesAdapter.categories.get(position).getId());
+
+        questionsListFragment.setArguments(bundle);
+        transaction.add(R.id.frame_container, questionsListFragment);
         transaction.addToBackStack(null).commit();
 
 
@@ -139,76 +163,10 @@ public class MainActivity extends AppCompatActivity
         if (fragmentManager.getBackStackEntryCount() == 1){
             menu.findItem(R.id.action_questions_search).setVisible(true);
             menu.findItem(R.id.action_refresh_categories).setVisible(false);
+            menu.findItem(R.id.action_add_question).setVisible(true);
         }
 
         return super.onPrepareOptionsMenu(menu);
-    }
-
-    private void refreshCategoriesGrid(){
-
-        final TextView categoriesPlaceholder = (TextView)findViewById(R.id.categories_placeholder_text_view);
-
-        ConnectivityManager connMgr = (ConnectivityManager) getSystemService(Context.CONNECTIVITY_SERVICE);
-        NetworkInfo networkInfo = connMgr.getActiveNetworkInfo();
-
-
-        if (networkInfo != null && networkInfo.isConnected()) {
-            categoriesPlaceholder.setText(getResources().getString(R.string.loading_categories));
-            new getCategoriesTask(){
-
-                @Override
-                public void onPostExecute(String jsonString) {
-                    super.onPostExecute(jsonString);
-
-                    GridView categoriesGrid = (GridView) findViewById(R.id.categories_grid);
-                    CategoriesAdapter categoriesAdapter = (CategoriesAdapter) categoriesGrid.getAdapter();
-
-                    if (categoriesGrid.getAdapter() == null){
-                        categoriesAdapter = new CategoriesAdapter(getApplicationContext());
-                        categoriesGrid.setAdapter(categoriesAdapter);
-                    }
-
-                    try{
-                        JSONArray jsonArray = new JSONArray(jsonString);
-
-                        for (int i=0; i < jsonArray.length(); i++){
-                            JSONObject jsonCategory = jsonArray.getJSONObject(i);
-
-                            String name = jsonCategory.getString("name");
-                            String img = jsonCategory.getString("image");
-
-                            Category category = new Category(name,img);
-
-                            if (categoriesAdapter.categories.contains(category)){
-                                //// FIXME: 26/09/2016 Não entra pois é sempre um novo objeto
-                                categoriesAdapter.categories.remove(category);
-                                categoriesAdapter.categories.add(category);
-                            } else {
-                                categoriesAdapter.categories.add(category);
-                            }
-
-                        }
-
-                        categoriesAdapter.notifyDataSetInvalidated();
-
-                    } catch (Exception e){
-                        Log.e("PARSE_JSON",e.getLocalizedMessage());
-                    }
-
-                    categoriesGrid.setVisibility(View.VISIBLE);
-                    categoriesPlaceholder.setVisibility(View.GONE);
-                }
-            }.execute();
-
-        } else {
-            if (/* There is local cache? */false) {
-                //Todo: Store local cache from categories
-            } else {
-                categoriesPlaceholder.setText(getResources().getString(R.string.no_internet_connection));
-            }
-
-        }
-
     }
 
     private class getCategoriesTask extends AsyncTask<Void,Void,String> {
@@ -217,7 +175,7 @@ public class MainActivity extends AppCompatActivity
         @Override
         protected String doInBackground(Void... params) {
             HashMap<String, String> getParams = new HashMap<>();
-            getParams.put("limit","10");
+            //getParams.put("limit","10");
 
             NetworkUtils.readTimeout = NetworkUtils.MEDIUM_TIMEOUT;
             NetworkUtils.connectionTimeout = NetworkUtils.MEDIUM_TIMEOUT;
@@ -225,6 +183,116 @@ public class MainActivity extends AppCompatActivity
             return NetworkUtils.getFromServer(getApplicationContext(),
                     getResources().getString(R.string.categories_fetch_uri), NetworkUtils.Method.GET, getParams);
         }
+    }
+
+    private void refreshCategoriesGrid(){
+
+
+        final RelativeLayout categoriesPlaceholder =         (RelativeLayout) findViewById(R.id.categories_placeholder);
+        final ProgressBar categoriesPlaceholderProgressbar = (ProgressBar) findViewById(R.id.categories_placeholder_progressbar);
+        final TextView categoriesPlaceholderTextView =       (TextView)findViewById(R.id.categories_placeholder_text_view);
+
+        ConnectivityManager connMgr = (ConnectivityManager) getSystemService(Context.CONNECTIVITY_SERVICE);
+        NetworkInfo networkInfo = connMgr.getActiveNetworkInfo();
+
+
+        if (networkInfo != null && networkInfo.isConnected()) {
+            if (!alreadyLoadedCategoriesOnce) categoriesPlaceholder.setVisibility(View.VISIBLE);
+            categoriesPlaceholderProgressbar.setVisibility(View.VISIBLE);
+            categoriesPlaceholderTextView.setText(getResources().getString(R.string.loading_categories));
+            new getCategoriesTask(){
+
+                @Override
+                public void onPostExecute(String serverResponse) {
+                    super.onPostExecute(serverResponse);
+
+                    final CategoriesAdapter categoriesAdapter;
+                    final GridView categoriesGrid = (GridView) findViewById(R.id.categories_grid);
+
+                    if (categoriesGrid.getAdapter() == null){
+                        categoriesAdapter = new CategoriesAdapter(getApplicationContext());
+                        categoriesGrid.setAdapter(categoriesAdapter);
+                    } else {
+                        categoriesAdapter = (CategoriesAdapter) categoriesGrid.getAdapter();
+                    }
+
+                    NetworkUtils.getJSONObjectsFromServerResponse(serverResponse, new NetworkUtils.OnGetJSONFromServerResponseEvents() {
+                        @Override
+                        public void onJsonObjectFound(JSONObject jsonObject) {
+                            try{
+
+                                Boolean foundExisting = false;
+                                Integer id = jsonObject.getInt("id");
+                                String name = jsonObject.getString("name");
+                                String img = jsonObject.getString("image");
+                                Category category = new Category(id,name,img);
+
+                                for (int i=0; i < categoriesAdapter.categories.size(); i++){
+                                    if (categoriesAdapter.categories.get(i).getId() ==  category.getId() ){
+                                        foundExisting = true;
+                                        categoriesAdapter.categories.set(i,category);
+                                        break;
+                                    }
+                                }
+                                if (!foundExisting){
+                                    categoriesAdapter.categories.add(category);
+                                }
+
+                            } catch (JSONException e){
+                                Log.e("PARSE_JSON",e.getLocalizedMessage());
+                            }
+                        }
+
+                        @Override
+                        public void onFinish(Boolean success) {
+                            if (success){
+                                if (categoriesAdapter.categories.size() > 0){
+                                    alreadyLoadedCategoriesOnce = true;
+                                    categoriesPlaceholder.setVisibility(View.GONE);
+                                    categoriesGrid.setVisibility(View.VISIBLE);
+                                } else {
+                                    categoriesGrid.setVisibility(View.GONE);
+                                    categoriesPlaceholder.setVisibility(View.VISIBLE);
+                                    categoriesPlaceholderProgressbar.setVisibility(View.GONE);
+                                    categoriesPlaceholderTextView.setText(getResources().getString(R.string.no_categories_available));
+                                }
+                            } else {
+                                categoriesGrid.setVisibility(View.GONE);
+
+                                categoriesPlaceholder.setVisibility(View.VISIBLE);
+                                categoriesPlaceholderProgressbar.setVisibility(View.GONE);
+                                categoriesPlaceholderTextView.setText(getResources().getString(R.string.unable_retrieve_categories));
+                            }
+                        }
+                    });
+                }
+            }.execute();
+
+        } else {
+            if (/* There is local cache? */false) {
+                //Todo: Store local cache from categories
+            } else {
+                categoriesPlaceholderTextView.setText(getResources().getString(R.string.no_internet_connection));
+
+                categoriesPlaceholder.setVisibility(View.VISIBLE);
+                categoriesPlaceholderProgressbar.setVisibility(View.GONE);
+            }
+
+        }
+
+    }
+
+    private void populateMenuInfo(NavigationView navigationView){
+        SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(this);
+
+        View headerLayout = navigationView.getHeaderView(0);
+
+        TextView displayNameTextView = (TextView) headerLayout.findViewById(R.id.display_name);
+        TextView userEmailTextView = (TextView) headerLayout.findViewById(R.id.user_email);
+
+
+        displayNameTextView.setText( prefs.getString("display_name","Anonymous") );
+        userEmailTextView.setText( prefs.getString("user_email","") );
     }
 
     private void populateBuildString(){
@@ -277,11 +345,10 @@ public class MainActivity extends AppCompatActivity
             return true;
         } else if (id == R.id.action_refresh_categories) {
             refreshCategoriesGrid();
-        } else if (id == R.id.action_add_question) {
-            Intent intent = new Intent(getApplicationContext(),WritePostActivity.class);
-            ActivityCompat.startActivity(this,intent,null);
-            return true;
-
+//        } else if (id == R.id.action_add_question) {
+//            Intent intent = new Intent(getApplicationContext(),WritePostActivity.class);
+//            ActivityCompat.startActivity(this,intent,null);
+//            return true;
         }
 
         return super.onOptionsItemSelected(item);
@@ -289,27 +356,31 @@ public class MainActivity extends AppCompatActivity
 
     @SuppressWarnings("StatementWithEmptyBody")
     @Override
-    @NonNull
-    public boolean onNavigationItemSelected(MenuItem item) {
+    public boolean onNavigationItemSelected(@NonNull MenuItem item) {
         // Handle navigation view item clicks here.
         int id = item.getItemId();
 
-        if (id == R.id.nav_categories) {
-            // Handle the camera action
-        } else if (id == R.id.nav_teachers) {
+        try {
 
-        } else if (id == R.id.nav_settings) {
-            Intent intent = new Intent(getApplicationContext(),SettingsActivity.class);
-            ActivityCompat.startActivity(this,intent,null);
-            return true;
-        } else if (id == R.id.nav_info) {
-
-        } else if (id == R.id.nav_exit) {
-
+            if (id == R.id.nav_categories) {
+                return true;
+            } else if (id == R.id.nav_favorites) {
+                Toast.makeText(this, getResources().getString(R.string.not_available_yet), Toast.LENGTH_SHORT).show();
+            } else if (id == R.id.nav_settings) {
+                Intent intent = new Intent(getApplicationContext(),SettingsActivity.class);
+                ActivityCompat.startActivity(this,intent,null);
+                return true;
+            } else if (id == R.id.nav_info) {
+                Toast.makeText(this, getResources().getString(R.string.not_available_yet), Toast.LENGTH_SHORT).show();
+            } else if (id == R.id.nav_exit) {
+                this.finishAffinity();
+                return true;
+            }
+            return false;
+        } finally {
+            DrawerLayout drawer = (DrawerLayout) findViewById(R.id.drawer_layout);
+            drawer.closeDrawer(GravityCompat.START);
         }
 
-        DrawerLayout drawer = (DrawerLayout) findViewById(R.id.drawer_layout);
-        drawer.closeDrawer(GravityCompat.START);
-        return true;
     }
 }

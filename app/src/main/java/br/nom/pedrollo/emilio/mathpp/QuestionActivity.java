@@ -1,9 +1,15 @@
 package br.nom.pedrollo.emilio.mathpp;
 
 import android.annotation.TargetApi;
+import android.content.Context;
 import android.content.Intent;
+import android.graphics.Typeface;
+import android.net.ConnectivityManager;
+import android.net.NetworkInfo;
+import android.os.AsyncTask;
 import android.os.Build;
 import android.os.Bundle;
+import android.support.annotation.Nullable;
 import android.support.design.widget.FloatingActionButton;
 import android.support.design.widget.Snackbar;
 import android.support.v4.content.ContextCompat;
@@ -13,27 +19,49 @@ import android.support.v7.widget.RecyclerView;
 import android.support.v7.widget.Toolbar;
 import android.transition.ChangeBounds;
 import android.transition.TransitionSet;
-import android.view.LayoutInflater;
+import android.util.Log;
+import android.view.Gravity;
 import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
-import android.widget.FrameLayout;
 import android.widget.ImageButton;
+import android.widget.ImageView;
+import android.widget.LinearLayout;
+import android.widget.RelativeLayout;
 import android.widget.TextView;
 
-import java.util.ArrayList;
-import java.util.List;
+import com.squareup.picasso.Picasso;
 
+import org.json.JSONException;
+import org.json.JSONObject;
+
+import java.io.BufferedReader;
+import java.io.StringReader;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.Locale;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+
+import br.nom.pedrollo.emilio.mathpp.adapters.AnswersAdapter;
 import br.nom.pedrollo.emilio.mathpp.entities.Answer;
+import br.nom.pedrollo.emilio.mathpp.utils.NetworkUtils;
 import br.nom.pedrollo.emilio.mathpp.utils.transitions.ExpandTransition;
 
 public class QuestionActivity extends AppCompatActivity {
 
 
+    public static final String MESSAGE_QUESTION_ID = "QUESTION_ID";
+
     public static final String MESSAGE_NEW_QUESTION = "NEW_QUESTION";
     public static final String MESSAGE_QUESTION_TITLE = "QUESTION_TITLE";
+    public static final String MESSAGE_QUESTION_BODY = "QUESTION_TEXT";
     public static final String MESSAGE_QUESTION_AUTHOR = "QUESTION_AUTHOR";
+    public static final String MESSAGE_QUESTION_AUTHOR_TYPE = "QUESTION_AUTHOR_TYPE";
     public static final String MESSAGE_QUESTION_N_ANSWERS = "QUESTION_N_ANSWERS";
+
+    Boolean alreadyLoadedCategoriesOnce = false;
+    int questionId;
 
     String TAG = "==XX==";
 
@@ -56,11 +84,12 @@ public class QuestionActivity extends AppCompatActivity {
 
         getSupportActionBar().setDisplayHomeAsUpEnabled(true);
 
-        populateAnswers();
-
         handleIntent(getIntent());
 
-        setupTransition();
+        populateAnswers();
+
+
+        //setupTransition();
 
 
         //TransitionHelper.fixSharedElementTransitionForStatusAndNavigationBar(this);
@@ -90,10 +119,37 @@ public class QuestionActivity extends AppCompatActivity {
 
     }
 
+    private class getAnswersTask extends AsyncTask<Void,Void,String> {
+        @SuppressWarnings("ThrowFromFinallyBlock")
+        @Override
+        protected String doInBackground(Void... params) {
+            HashMap<String, String> getParams = new HashMap<>();
+
+            NetworkUtils.readTimeout = NetworkUtils.MEDIUM_TIMEOUT;
+            NetworkUtils.connectionTimeout = NetworkUtils.MEDIUM_TIMEOUT;
+
+            String uri = getResources().getString(R.string.answers_fetch_uri) +
+                    "/" + Integer.toString(questionId);
+
+            return NetworkUtils.getFromServer(getBaseContext(), uri,
+                    NetworkUtils.Method.GET, getParams);
+
+        }
+    }
+
     private void populateAnswers() {
-        RecyclerView answerList = (RecyclerView) findViewById(R.id.question_answers);
-        answerList.setLayoutManager(new LinearLayoutManager(this));
+
+        final RecyclerView answerList = (RecyclerView) findViewById(R.id.question_answers);
+
+        LinearLayoutManager linearLayoutManager = new LinearLayoutManager(this);
+        linearLayoutManager.setOrientation(LinearLayoutManager.VERTICAL);
+        answerList.setLayoutManager(linearLayoutManager);
+        answerList.setAdapter(new AnswersAdapter());
+
         answerList.setNestedScrollingEnabled(false);
+
+        final RelativeLayout questionsAnswersPlaceholder = (RelativeLayout) findViewById(R.id.question_answers_placeholder);
+        final TextView questionsAnswersPlaceholderTextView = (TextView) findViewById(R.id.question_answers_placeholder_text_view);
 
         ImageButton star = (ImageButton) findViewById(R.id.question_star);
 
@@ -110,68 +166,115 @@ public class QuestionActivity extends AppCompatActivity {
             }
         });
 
+        ConnectivityManager connMgr = (ConnectivityManager) getSystemService(Context.CONNECTIVITY_SERVICE);
+        NetworkInfo networkInfo = connMgr.getActiveNetworkInfo();
 
-        final List<Answer> answers = new ArrayList<>();
-        answers.add(new Answer("Emílio","This is a stub Answer 1",getResources().getString(R.string.lipsum)));
-        answers.add(new Answer("Emílio","This is a stub Answer 2",getResources().getString(R.string.lipsum)));
-        answers.add(new Answer("Emílio","This is a stub Answer 3",getResources().getString(R.string.lipsum)));
-        answers.add(new Answer("Emílio","This is a stub Answer 4",getResources().getString(R.string.lipsum)));
-        answers.add(new Answer("Emílio","This is a stub Answer 5",getResources().getString(R.string.lipsum)));
+        if (networkInfo != null && networkInfo.isConnected()) {
+            questionsAnswersPlaceholder.setVisibility(View.VISIBLE);
+            questionsAnswersPlaceholderTextView.setText(getResources().getString(R.string.loading_answers));
 
-        answerList.setAdapter(new RecyclerView.Adapter<AnswerViewHolder>(){
+            new getAnswersTask(){
+                @Override
+                protected void onPostExecute(String serverResponse) {
+                    super.onPostExecute(serverResponse);
 
+                    NetworkUtils.getJSONObjectsFromServerResponse(serverResponse, new NetworkUtils.OnGetJSONFromServerResponseEvents() {
+                        @Override
+                        public void onJsonObjectFound(JSONObject jsonObject) {
+                            try{
+
+                                Boolean foundExisting = false;
+                                Integer id = jsonObject.getInt("id");
+                                String title = jsonObject.getString("title");
+                                String text = jsonObject.getString("text");
+                                String author = jsonObject.getString("author");
+                                String authorType = jsonObject.getString("authorType");
+                                int score = jsonObject.getInt("score");
+
+                                Answer answer = new Answer(id,title,text,author,authorType,score);
+                                AnswersAdapter adapter = (AnswersAdapter) answerList.getAdapter();
+
+                                for (int i=0; i < adapter.answers.size(); i++){
+                                    if (adapter.answers.get(i).getId() ==  answer.getId() ){
+                                        foundExisting = true;
+                                        adapter.answers.set(i,answer);
+                                        break;
+                                    }
+                                }
+                                if (!foundExisting){
+                                    adapter.answers.add(answer);
+                                }
+
+                            } catch (JSONException e){
+                                Log.e("PARSE_JSON",e.getLocalizedMessage());
+                            }
+                        }
+
+                        @Override
+                        public void onFinish(Boolean success) {
+                            AnswersAdapter adapter = (AnswersAdapter) answerList.getAdapter();
+
+                            if (success){
+                                if (adapter.answers.size() > 0){
+                                    alreadyLoadedCategoriesOnce = true;
+                                    questionsAnswersPlaceholder.setVisibility(View.GONE);
+                                    answerList.setVisibility(View.VISIBLE);
+                                } else {
+                                    answerList.setVisibility(View.GONE);
+                                    questionsAnswersPlaceholder.setVisibility(View.VISIBLE);
+                                    questionsAnswersPlaceholderTextView.setText(getResources().getString(R.string.no_answers_available));
+                                }
+                                adapter.notifyDataSetChanged();
+                            } else {
+                                answerList.setVisibility(View.GONE);
+                                questionsAnswersPlaceholder.setVisibility(View.VISIBLE);
+                                questionsAnswersPlaceholderTextView.setText(getResources().getString(R.string.unable_retrieve_answers));
+                            }
+                        }
+                    });
+                }
+            }.execute();
+
+
+        } else {
+            questionsAnswersPlaceholderTextView.setText(getResources().getString(R.string.no_internet_connection));
+            questionsAnswersPlaceholder.setVisibility(View.VISIBLE);
+        }
+
+        ((AnswersAdapter)answerList.getAdapter()).setOnBindViewHolder(new AnswersAdapter.OnBindViewHolder() {
             @Override
-            public AnswerViewHolder onCreateViewHolder(ViewGroup parent, int viewType) {
-                View view = LayoutInflater.from(parent.getContext())
-                        .inflate(R.layout.answer_item,parent,false);
-                return (new AnswerViewHolder(view));
-            }
+            public void onBindViewHolder(AnswersAdapter.ViewHolder holder, int position) {
 
-            @Override
-            public void onBindViewHolder(AnswerViewHolder holder, int position) {
-                /*holder.answerItem.setLongClickable(true);
-                holder.answerItem.setClickable(true);
+                final AnswersAdapter.ViewHolder viewHolder = holder;
 
-                if (clickListener != null)
-                    holder.answerItem.setOnClickListener(clickListener);
+                AnswersAdapter adapter = (AnswersAdapter) answerList.getAdapter();
 
-                if (longClickListener != null)
-                    holder.answerItem.setOnLongClickListener(longClickListener);*/
-
-                String userRespondsString = getResources().getString(R.string.user_responded);
-
-                Answer answer = answers.get(position);
-
-                holder.answerTitle.setText( answer.getTitle() );
-                holder.answerAuthor.setText(String.format(userRespondsString,answer.getAuthor()));
-                holder.answerText.setText( answer.getText() );
-
-                ImageButton thumbsUp = (ImageButton) holder.itemView.findViewById(R.id.thumbs_up_vote);
-                ImageButton thumbsDown = (ImageButton) holder.itemView.findViewById(R.id.thumbs_down_vote);
+                createBody(holder.answerBody,adapter.answers.get(position).getText(),BodyType.ANSWER);
 
                 View.OnClickListener onClickListener = new View.OnClickListener() {
                     @Override
                     public void onClick(View v) {
                         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP)
-                        if (v.getTag() == TAG) {
-                            ((ImageButton) v).setColorFilter(null);
-                            v.setTag(null);
-                        } else {
-                            ((ImageButton) v).setColorFilter(ContextCompat.getColor(getApplicationContext(),R.color.colorAccent));
-                            v.setTag(TAG);
-                        }
+                            if (v.getTag() == TAG) {
+                                ((ImageButton) v).setColorFilter(null);
+                                v.setTag(null);
+                            } else {
+                                viewHolder.thumbsUp.setColorFilter(null);
+                                viewHolder.thumbsUp.setTag(null);
+                                viewHolder.thumbsDown.setColorFilter(null);
+                                viewHolder.thumbsDown.setTag(null);
+                                ((ImageButton) v).setColorFilter(ContextCompat.getColor(getApplicationContext(),R.color.colorAccent));
+                                v.setTag(TAG);
+                            }
                     }
                 };
 
-                thumbsUp.setOnClickListener(onClickListener);
-                thumbsDown.setOnClickListener(onClickListener);
-            }
+                holder.thumbsUp.setOnClickListener(onClickListener);
+                holder.thumbsDown.setOnClickListener(onClickListener);
 
-            @Override
-            public int getItemCount() {
-                return answers.size();
             }
         });
+
     }
 
     @Override
@@ -185,31 +288,200 @@ public class QuestionActivity extends AppCompatActivity {
         return super.onOptionsItemSelected(item);
     }
 
-    private static class AnswerViewHolder extends RecyclerView.ViewHolder{
-        FrameLayout answerItem;
-        TextView answerTitle;
-        TextView answerAuthor;
-        TextView answerText;
+    public enum BodyPartType{
+        NONE(""), TEXT("Text"), IMAGE("Image");
 
-        AnswerViewHolder(View itemView) {
-            super(itemView);
-            answerItem = (FrameLayout) itemView.findViewById(R.id.answer_item_background);
+        private String value;
 
-            answerTitle = (TextView) answerItem.findViewById(R.id.answer_item_title);
-            answerAuthor = (TextView) answerItem.findViewById(R.id.answer_item_author);
-            answerText = (TextView) answerItem.findViewById(R.id.answer_item_text);
+        BodyPartType(String value){
+            this.value = value;
         }
 
+        public String getValue() {
+            return value;
+        }
+    }
+
+    public class BodyPart{
+        private final BodyPartType type;
+        private final String content;
+
+        BodyPart(BodyPartType type, String content){
+            this.type = type;
+            this.content = content;
+        }
+
+        public String getContent() {
+            return content;
+        }
+
+        public BodyPartType getType() {
+            return type;
+        }
+    }
+
+    public enum BodyType{
+        QUESTION, ANSWER
+    }
+
+    @Nullable
+    private ArrayList<BodyPart> parseBody(String body){
+        BufferedReader reader = new BufferedReader(new StringReader(body));
+        Pattern boundaryPattern = Pattern.compile("Boundary: (.*)");
+        Pattern typePattern = Pattern.compile("Type: (.*)");
+        Matcher matcher;
+        String boundary;
+        String line;
+        StringBuilder stringBuilder = new StringBuilder();
+        BodyPartType currentPartType = BodyPartType.NONE;
+        Boolean contentHasStarted = false;
+
+        ArrayList<BodyPart> parts = new ArrayList<>();
+
+        try{
+            line = reader.readLine();
+            if (line.startsWith("Boundary:")){
+                matcher = boundaryPattern.matcher(line);
+                if (matcher.find()){
+                    boundary = matcher.group(1);
+                } else {
+                    throw new Exception("Malformed Body");
+                }
+            } else {
+                parts.add(new BodyPart(BodyPartType.TEXT,body));
+                return parts;
+            }
+
+            stringBuilder.setLength(0);
+
+            while ((line = reader.readLine()) != null) {
+                if (line.equals(boundary)){
+                    if (stringBuilder.length() > 0){
+                        parts.add(new BodyPart(currentPartType,stringBuilder.toString()));
+                        stringBuilder.setLength(0);
+                        contentHasStarted = false;
+                    }
+                } else {
+                    if (!contentHasStarted){
+                        if (line.startsWith("Type:")){
+                            matcher = typePattern.matcher(line);
+                            if (matcher.find()){
+                                switch (matcher.group(1)) {
+                                    case "Text":
+                                        currentPartType = BodyPartType.TEXT;
+                                        break;
+                                    case "Image":
+                                        currentPartType = BodyPartType.IMAGE;
+                                        break;
+                                }
+                            }
+                        } else if (line.equals("")){
+                            contentHasStarted = true;
+                        }
+                    } else {
+                        stringBuilder.append(line);
+                    }
+                }
+            }
+
+            return parts;
+        } catch (Exception e) {
+            Log.e("PARSE_POST_TEXT",e.getMessage());
+            return null;
+        }
+    }
+
+    private void createBody(ViewGroup container, String body, BodyType bodyType){
+        ArrayList<BodyPart> parts = parseBody(body);
+
+        float scale = getResources().getDisplayMetrics().density;
+
+        assert parts != null;
+        for(BodyPart entry : parts){
+            switch (entry.getType()){
+                case TEXT:
+                    TextView textView = new TextView(getBaseContext());
+                    textView.setText(entry.getContent());
+
+                    LinearLayout.LayoutParams layoutParams = new LinearLayout.LayoutParams(
+                            ViewGroup.LayoutParams.MATCH_PARENT,
+                            ViewGroup.LayoutParams.WRAP_CONTENT, 1.0f);
+
+                    if (bodyType == BodyType.ANSWER) {
+                        layoutParams.setMargins(0, (int) (8 * scale + 0.5f), 0, 0);
+                    }
+
+                    textView.setLayoutParams(layoutParams);
+
+                    textView.setTextSize(14);
+                    textView.setLineSpacing(0f,1.1f);
+
+                    textView.setTypeface(Typeface.SANS_SERIF, Typeface.NORMAL);
+
+                    if (bodyType == BodyType.QUESTION){
+                        textView.setTextColor(ContextCompat.getColor(
+                                getApplicationContext(),android.R.color.tertiary_text_light));
+                    } else {
+                        textView.setTextColor(ContextCompat.getColor(
+                                getApplicationContext(),android.R.color.secondary_text_light));
+                        textView.setGravity(Gravity.CENTER_VERTICAL | Gravity.START);
+
+                    }
+
+                    container.addView(textView);
+                    break;
+                case IMAGE:
+                    StringBuilder stringBuilder = new StringBuilder();
+                    ImageView imageView = new ImageView(getBaseContext());
+
+                    imageView.setLayoutParams(new LinearLayout.LayoutParams(
+                            LinearLayout.LayoutParams.MATCH_PARENT,
+                            LinearLayout.LayoutParams.WRAP_CONTENT));
+
+                    int padding = (int) (8*scale + 0.5f);
+                    imageView.setPadding(padding,padding,padding,padding);
+                    imageView.setAdjustViewBounds(true);
+
+                    container.addView(imageView);
+
+                    stringBuilder.append(getResources().getString(R.string.fetch_hostname));
+                    stringBuilder.append(entry.getContent());
+
+                    Picasso.with(getBaseContext()).load(stringBuilder.toString()).into(imageView);
+                    break;
+            }
+        }
     }
 
     private void handleIntent(Intent intent){
         TextView questionAuthor = (TextView) findViewById(R.id.question_author);
         TextView questionTitle = (TextView) findViewById(R.id.question_title);
-        TextView questionAnswerNumber = (TextView) findViewById(R.id.question_answer_number);
+        TextView questionAnswerNumber = (TextView) findViewById(R.id.answer_item_score);
+        ImageView questionAuthorIcon = (ImageView) findViewById(R.id.question_author_icon);
+
+        questionId = intent.getIntExtra(MESSAGE_QUESTION_ID,-1);
+
+        LinearLayout questionBody = (LinearLayout) findViewById(R.id.question_body);
+
+
+        switch (intent.getStringExtra(MESSAGE_QUESTION_AUTHOR_TYPE)){
+            case "student":
+                questionAuthorIcon.setImageResource(R.drawable.ic_person_outline_black_24dp);
+                break;
+            case "monitor":
+                questionAuthorIcon.setImageResource(R.drawable.ic_person_black_24dp);
+                break;
+            case "teacher":
+                questionAuthorIcon.setImageResource(R.drawable.ic_school_black_24dp);
+                break;
+        }
 
         questionAuthor.setText(intent.getStringExtra(MESSAGE_QUESTION_AUTHOR));
         questionTitle.setText(intent.getStringExtra(MESSAGE_QUESTION_TITLE));
-        questionAnswerNumber.setText(intent.getStringExtra(MESSAGE_QUESTION_N_ANSWERS));
+        questionAnswerNumber.setText(String.format(Locale.getDefault(),"%d",intent.getIntExtra(MESSAGE_QUESTION_N_ANSWERS,0)));
+
+        createBody(questionBody,intent.getStringExtra(MESSAGE_QUESTION_BODY),BodyType.QUESTION);
+
     }
 
 }

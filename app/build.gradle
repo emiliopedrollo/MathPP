@@ -61,4 +61,6 @@ dependencies {
     compile 'jp.wasabeef:recyclerview-animators:2.2.4'
     compile 'com.getbase:floatingactionbutton:1.10.0'
     testCompile 'junit:junit:4.12'
+    compile 'org.jetbrains:annotations-java5:15.0'
+    compile 'com.google.android.gms:play-services-appindexing:8.4.0'
 }

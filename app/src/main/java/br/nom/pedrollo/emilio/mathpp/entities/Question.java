@@ -1,37 +1,28 @@
 package br.nom.pedrollo.emilio.mathpp.entities;
 
-public class Answer {
+public class Question {
     private int id;
     private String title;
     private String text;
     private String author;
     private String authorType;
     private String authorIMEI;
-    private int score;
+    private int answers;
 
-    public Answer(int id, String title, String text, String author, String authorType, int score){
+    public Question(){
+    }
+
+    public Question(int id, String title, String text, String author, String authorType, int answers){
         this.id = id;
         this.title = title;
         this.text = text;
         this.author = author;
         this.authorType = authorType;
-        this.score = score;
+        this.answers = answers;
     }
 
-    public String getAuthor() {
-        return author;
-    }
-
-    public void setAuthor(String author) {
-        this.author = author;
-    }
-
-    public String getText() {
-        return text;
-    }
-
-    public void setText(String text) {
-        this.text = text;
+    public int getId() {
+        return id;
     }
 
     public String getTitle() {
@@ -42,12 +33,28 @@ public class Answer {
         this.title = title;
     }
 
-    public int getScore() {
-        return score;
+    public String getText() {
+        return text;
     }
 
-    public void setScore(int score) {
-        this.score = score;
+    public void setText(String text) {
+        this.text = text;
+    }
+
+    public String getAuthor() {
+        return author;
+    }
+
+    public void setAuthor(String author) {
+        this.author = author;
+    }
+
+    public int getAnswers() {
+        return answers;
+    }
+
+    public void setAnswers(int answers) {
+        this.answers = answers;
     }
 
     public String getAuthorType() {
@@ -64,9 +71,5 @@ public class Answer {
 
     public void setAuthorIMEI(String authorIMEI) {
         this.authorIMEI = authorIMEI;
-    }
-
-    public int getId() {
-        return id;
     }
 }

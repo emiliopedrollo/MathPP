@@ -1,7 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
-<LinearLayout
+<RelativeLayout
     xmlns:android="http://schemas.android.com/apk/res/android"
-    android:orientation="vertical"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:background="@android:color/white"
@@ -20,4 +19,26 @@
 
     </android.support.v4.widget.SwipeRefreshLayout>
 
-</LinearLayout>
+    <RelativeLayout
+        android:id="@+id/questions_placeholder"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent">
+        <LinearLayout
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_centerInParent="true"
+            android:orientation="vertical">
+            <ProgressBar
+                android:id="@+id/questions_placeholder_progressbar"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content" />
+            <TextView
+                android:id="@+id/questions_placeholder_text_view"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="5dp"
+                android:text="@string/loading_questions" />
+        </LinearLayout>
+    </RelativeLayout>
+
+</RelativeLayout>

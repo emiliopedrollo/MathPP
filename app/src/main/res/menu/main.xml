@@ -17,6 +17,7 @@
         android:id="@+id/action_add_question"
         android:orderInCategory="100"
         android:title="@string/action_add_question"
+        android:visible="false"
         android:icon="@drawable/ic_create_white_24dp"
         app:showAsAction="ifRoom" />
 

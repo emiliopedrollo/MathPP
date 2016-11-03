@@ -23,15 +23,18 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:background="@android:color/transparent"
-            android:hint="Title"
+            android:inputType="textCapSentences|textAutoCorrect|text"
+            android:hint="@string/write_title_hint"
             android:textStyle="bold" />
         <EditText
+            android:id="@+id/question_text"
             android:layout_width="match_parent"
             android:layout_height="0dp"
             android:layout_weight="1"
             android:background="@android:color/transparent"
             android:gravity="top|start"
-            android:hint="Question"
+            android:inputType="textCapSentences|textAutoCorrect|text"
+            android:hint="@string/white_question_hint"
             android:paddingTop="8dp" />
     </LinearLayout>
 

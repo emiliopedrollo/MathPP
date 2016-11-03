@@ -1,13 +1,18 @@
 package br.nom.pedrollo.emilio.mathpp.fragments;
 
 import android.app.Fragment;
+import android.content.Context;
 import android.content.Intent;
 import android.graphics.BitmapFactory;
 import android.graphics.Color;
+import android.net.ConnectivityManager;
+import android.net.NetworkInfo;
+import android.os.AsyncTask;
 import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
 import android.support.annotation.Nullable;
+import android.support.design.widget.NavigationView;
 import android.support.design.widget.Snackbar;
 import android.support.v4.app.ActivityCompat;
 import android.support.v4.app.ActivityOptionsCompat;
@@ -20,90 +25,47 @@ import android.support.v7.widget.RecyclerView;
 import android.support.v7.widget.helper.ItemTouchHelper;
 import android.util.Log;
 import android.view.LayoutInflater;
+import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
 import android.view.animation.Animation;
 import android.view.animation.ScaleAnimation;
 import android.view.animation.Transformation;
+import android.widget.ProgressBar;
+import android.widget.RelativeLayout;
 import android.widget.TextView;
 import android.widget.Toast;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-import java.util.Random;
+import org.jetbrains.annotations.Contract;
+import org.json.JSONException;
+import org.json.JSONObject;
+
+import java.util.HashMap;
 
 import br.nom.pedrollo.emilio.mathpp.MainActivity;
 import br.nom.pedrollo.emilio.mathpp.QuestionActivity;
 import br.nom.pedrollo.emilio.mathpp.R;
+import br.nom.pedrollo.emilio.mathpp.WritePostActivity;
 import br.nom.pedrollo.emilio.mathpp.adapters.QuestionsAdapter;
+import br.nom.pedrollo.emilio.mathpp.entities.Question;
+import br.nom.pedrollo.emilio.mathpp.utils.NetworkUtils;
 import br.nom.pedrollo.emilio.mathpp.utils.SimpleCallBackWithBackground;
 import br.nom.pedrollo.emilio.mathpp.utils.TransitionHelper;
 
+// TODO: Implement infinite scroll
+
+// TODO: Implement and verify user type, using the correct icon
+
 public class QuestionsListFragment extends Fragment implements SwipeRefreshLayout.OnRefreshListener {
 
-    //private ListView listView;
+    public final static String CATEGORY = "CATEGORY";
 
-    static final String[] questions = new String[]{
-            "Quanto é 2+2?",
-            "Conjectura de Hodge",
-            "Hipótese de Riemann",
-            "6÷2(1+2)=X",
-            "Existência de Yang-Mills e intervalo de massa",
-            "Existência e suavidade de Navier-Stokes",
-            "Monty Hall: Mudar ou não mudar de porta? Por quê?",
-            "Conjectura de Birch e Swinnerton-Dyer",
-            "P x NP",
-            "Problemas de Hilbert",
-            "Problemas de Landau",
-            "Problemas de Smale",
-            "O quê f(x) = x^2 + c é inteiro e seu módulo é diferente de 0, 1 ou 2 tem de especial?",
-            "O número 1 é primo?",
-            "Qual a forma mais eficiente de embaralhar um baralho?",
-            "O que é um nó?",
-            "O que é uma garrafa de Klein?",
-            "Numeros de Leyland",
-            "O que é maior, 1 Gogol ou o numero de Graham?",
-            "Teoria Fundamental da Algebra",
-            "Quantos infinitos existem?",
-            "Como se usa o Google?",
-            "Pi = 3.2?",
-            "O conjugado da razão entre o número complexo z = 4 - 8i e o número complexo de argumento igual a o = 180° e módulo igual a 4",
-            "15 – {–10 – [–8 + ( 5 – 12 )] – 20}",
-            "Considere a igualdade x + (4 + y) . i = (6 - x) + 2yi , em que x e y são números reais e i é a unidade imaginária. Qual é o módulo do número complexo z = x + yi",
-            "df/dx = d(f(-x))/dx",
-            "The graph of f has two minimums, one at x = -2 and one at x = 4, and one maximum at x = 1. Therefore f '(x) = 0 for x = -2, x = 1 and x = 4",
-            "Meu colega me disse que a raiz quadrada de 2 é 1. Ta serto isso?",
-            "O que é um tesseract? Que gosto tem?",
-            "Quais são as propriedades matemáticas de um Nó de trevo?",
-            "Alguém tem a prova da professóra Enésima sobre Geometria Analítica?",
-            "Alguém consegue me explicar o que diabos é um Cardioide?",
-    };
-
-    static final String[] authors = new String[]{
-            "Bruno",
-            "Isabel",
-            "Emílio",
-            "Francielle",
-            "Fábio",
-            "Guilherme",
-            "Andréia",
-            "Patrícia",
-            "Fabiana"
-    };
-
+    private Boolean alreadyLoadedCategoriesOnce = false;
     private SwipeRefreshLayout swipeRefreshLayout;
     private RecyclerView questionsList;
+    private RelativeLayout questionsPlaceholder;
 
-    private void shuffleArray(String[] array){
-        Random random  = new Random();
-        for (int i = array.length - 1; i > 0; i--){
-            int index = random.nextInt(i+1);
-            String tmp = array[index];
-            array[index] = array[i];
-            array[i] = tmp;
-        }
-    }
+    private int categoryId;
 
     @Override
     public void onRefresh() {
@@ -113,19 +75,92 @@ public class QuestionsListFragment extends Fragment implements SwipeRefreshLayou
                 swipeRefreshLayout.setRefreshing(false);
             }
         }, 4000);
+        //TODO: make it really reload
     }
 
     @Override
     public void onCreate(@Nullable Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        Bundle bundle = getArguments();
+        if (bundle.containsKey(CATEGORY)){
+            categoryId = bundle.getInt(CATEGORY);
+        } else {
+            categoryId = -1;
+        }
         setHasOptionsMenu(true);
     }
 
     @Override
-    public void onViewCreated(View view, @Nullable Bundle savedInstanceState) {
-        super.onViewCreated(view, savedInstanceState);
+    public boolean onOptionsItemSelected(MenuItem item) {
+        switch (item.getItemId()) {
+            case R.id.action_add_question:
+                Intent intent = new Intent(getActivity(),WritePostActivity.class);
+                intent.putExtra("Category",categoryId);
+                ActivityCompat.startActivity(getActivity(),intent,null);
+                return true;
+            default:
+                return super.onOptionsItemSelected(item);
+        }
+    }
+
+    private class CollectParams {
+        public int offset;
+        public int limit;
+
+        CollectParams(){
+            this.offset = 0;
+            this.limit = 50;
+        }
+
+        CollectParams(int offset){
+            this.offset = offset;
+            this.limit = 10;
+        }
+
+        CollectParams(int offset, int limit){
+            this.offset = offset;
+            this.limit = limit;
+        }
+    }
+
+    private class getQuestionsTask extends AsyncTask<CollectParams,Void,String> {
+        @SuppressWarnings("ThrowFromFinallyBlock")
+        @Override
+        protected String doInBackground(CollectParams... params) {
+            HashMap<String, String> getParams = new HashMap<>();
+            getParams.put("offset",Integer.toString(params[0].offset));
+            getParams.put("limit",Integer.toString(params[0].limit));
+
+            NetworkUtils.readTimeout = NetworkUtils.MEDIUM_TIMEOUT;
+            NetworkUtils.connectionTimeout = NetworkUtils.MEDIUM_TIMEOUT;
+
+            StringBuilder uri = new StringBuilder();
+            uri.append(getResources().getString(R.string.questions_fetch_uri));
+            if (categoryId != -1){
+                uri.append("/");
+                uri.append(categoryId);
+            }
+
+            return NetworkUtils.getFromServer(getContext(),uri.toString(),
+                    NetworkUtils.Method.GET, getParams);
+        }
+    }
+
+    @Override
+    public View onCreateView(LayoutInflater inflater, ViewGroup container,
+                             Bundle savedInstanceState) {
+
+        final View view = inflater.inflate(R.layout.fragment_question_list, container, false);
+
+        questionsPlaceholder = (RelativeLayout) view.findViewById(R.id.questions_placeholder);
+        final ProgressBar questionsPlaceholderProgressbar = (ProgressBar) view.findViewById(R.id.questions_placeholder_progressbar);
+        final TextView questionsPlaceholderTextView = (TextView) view.findViewById(R.id.questions_placeholder_text_view);
 
         questionsList = (RecyclerView) view.findViewById(R.id.questions_list);
+        questionsList.setItemAnimator(new DefaultItemAnimator());
+        questionsList.setLayoutManager(new LinearLayoutManager(view.getContext()));
+        questionsList.setAdapter(new QuestionsAdapter());
+        questionsList.setHasFixedSize(true);
 
         swipeRefreshLayout = (SwipeRefreshLayout) view.findViewById(R.id.swipe_refresh_question_list);
         swipeRefreshLayout.setOnRefreshListener(this);
@@ -133,72 +168,136 @@ public class QuestionsListFragment extends Fragment implements SwipeRefreshLayou
                 ContextCompat.getColor(view.getContext(),R.color.colorPrimaryDark),
                 ContextCompat.getColor(view.getContext(),R.color.colorAccent));
 
-    }
+        fixOverScroll((LinearLayoutManager) questionsList.getLayoutManager());
+        handleSwipe(container, (QuestionsAdapter) questionsList.getAdapter());
 
-    @Override
-    public View onCreateView(LayoutInflater inflater, ViewGroup container,
-                             Bundle savedInstanceState) {
 
-        List<String> questions = new ArrayList<>(Arrays.asList(this.questions));
-        List<String> authors = new ArrayList<>();
-        List<Integer> answers = new ArrayList<>();
-        for (int i = 0; i< questions.size();i++){
-            authors.add(this.authors[(new Random()).nextInt(this.authors.length)]);
-            answers.add((new Random()).nextInt(16));
+        ConnectivityManager connMgr = (ConnectivityManager) view.getContext().getSystemService(Context.CONNECTIVITY_SERVICE);
+        NetworkInfo networkInfo = connMgr.getActiveNetworkInfo();
+
+        if (networkInfo != null && networkInfo.isConnected()) {
+
+            questionsPlaceholder.setVisibility(View.VISIBLE);
+            questionsPlaceholderProgressbar.setVisibility(View.VISIBLE);
+            questionsPlaceholderTextView.setText(getResources().getString(R.string.loading_questions));
+
+            new getQuestionsTask(){
+                @Override
+                protected void onPostExecute(String serverResponse) {
+                    super.onPostExecute(serverResponse);
+
+                    NetworkUtils.getJSONObjectsFromServerResponse(serverResponse, new NetworkUtils.OnGetJSONFromServerResponseEvents() {
+                        @Override
+                        public void onJsonObjectFound(JSONObject jsonObject) {
+                            try{
+
+                                Boolean foundExisting = false;
+                                Integer id = jsonObject.getInt("id");
+                                String title = jsonObject.getString("title");
+                                String text = jsonObject.getString("text");
+                                String author = jsonObject.getString("author");
+                                String authorType = jsonObject.getString("authorType");
+                                int answers = jsonObject.getInt("n_answers");
+
+                                Question question = new Question(id,title,text,author,authorType,answers);
+                                QuestionsAdapter adapter = (QuestionsAdapter) questionsList.getAdapter();
+
+                                for (int i=0; i < adapter.questions.size(); i++){
+                                    if (adapter.questions.get(i).getId() ==  question.getId() ){
+                                        foundExisting = true;
+                                        adapter.questions.set(i,question);
+                                        break;
+                                    }
+                                }
+                                if (!foundExisting){
+                                    adapter.questions.add(question);
+                                }
+
+                            } catch (JSONException e){
+                                Log.e("PARSE_JSON",e.getLocalizedMessage());
+                            }
+                        }
+
+                        @Override
+                        public void onFinish(Boolean success) {
+                            QuestionsAdapter adapter = (QuestionsAdapter) questionsList.getAdapter();
+
+                            ProgressBar questionsPlaceholderProgressbar =
+                                    (ProgressBar)questionsPlaceholder.findViewById(R.id.questions_placeholder_progressbar);
+
+                            TextView questionsPlaceholderTextView =
+                                    (TextView) questionsPlaceholder.findViewById(R.id.questions_placeholder_text_view);
+
+                            if (success){
+                                if (adapter.questions.size() > 0){
+                                    alreadyLoadedCategoriesOnce = true;
+                                    questionsPlaceholder.setVisibility(View.GONE);
+                                    questionsList.setVisibility(View.VISIBLE);
+                                } else {
+                                    questionsList.setVisibility(View.GONE);
+                                    questionsPlaceholder.setVisibility(View.VISIBLE);
+                                    questionsPlaceholderProgressbar.setVisibility(View.GONE);
+                                    questionsPlaceholderTextView.setText(getResources().getString(R.string.no_categories_available));
+                                }
+                                adapter.notifyDataSetChanged();
+                            } else {
+                                questionsList.setVisibility(View.GONE);
+                                questionsPlaceholder.setVisibility(View.VISIBLE);
+                                questionsPlaceholderProgressbar.setVisibility(View.GONE);
+                                questionsPlaceholderTextView.setText(getResources().getString(R.string.unable_retrieve_categories));
+                            }
+                        }
+                    });
+
+                }
+            }.execute(new CollectParams());
+
+
+        } else {
+            questionsPlaceholderTextView.setText(getResources().getString(R.string.no_internet_connection));
+            questionsPlaceholder.setVisibility(View.VISIBLE);
+            questionsPlaceholderProgressbar.setVisibility(View.GONE);
         }
 
-
-        final View view = inflater.inflate(R.layout.fragment_question_list, container, false);
-        final QuestionsAdapter questionsAdapter = new QuestionsAdapter(questions,authors,answers);
-        final RecyclerView.LayoutManager layoutManager = new LinearLayoutManager(container.getContext());
-
-        questionsList = (RecyclerView) view.findViewById(R.id.questions_list);
-        questionsList.setHasFixedSize(true);
-        questionsList.setLayoutManager(layoutManager);
-
-        questionsList.setItemAnimator(new DefaultItemAnimator());
-        //questionsList.getItemAnimator().setRemoveDuration(500);
-
-
-        // Workaround to enable overscroll effect in the bottom of RecyclerView
-        fixOverScroll((LinearLayoutManager) layoutManager);
-
-        //Handle Swipe
-        handleSwipe(container, questionsAdapter);
-
-
-        questionsList.setAdapter(questionsAdapter);
-
-
-        ((QuestionsAdapter)questionsList.getAdapter()).setOnItemLongClickListener(new View.OnLongClickListener() {
+        ((QuestionsAdapter)questionsList.getAdapter()).setOnBindViewHolder(new QuestionsAdapter.OnBindViewHolder() {
             @Override
-            public boolean onLongClick(View view) {
-                Toast.makeText(view.getContext(),((TextView) view.findViewById(R.id.question_title)).getText(),Toast.LENGTH_SHORT).show();
-                return true;
-            }
-        });
-
-        ((QuestionsAdapter)questionsList.getAdapter()).setOnItemClickListener(new View.OnClickListener() {
-
-            @Override
-            public void onClick(View view) {
-
-                goToQuestionDetail(view);
+            public void onBindViewHolder(QuestionsAdapter.ViewHolder holder, final int position) {
+                holder.itemView.setClickable(true);
+                holder.itemView.setLongClickable(true);
+                holder.itemView.setOnLongClickListener(new View.OnLongClickListener() {
+                    @Override
+                    public boolean onLongClick(View v) {
+                        Toast.makeText(v.getContext(),
+                                ((TextView) v.findViewById(R.id.question_title)).getText(),
+                                Toast.LENGTH_SHORT).show();
+                        return true;
+                    }
+                });
+                holder.itemView.setOnClickListener(new View.OnClickListener() {
+                    @Override
+                    public void onClick(View v) {
+                        goToQuestionDetail(view,
+                                ((QuestionsAdapter)questionsList.getAdapter()).questions.get(position));
+                    }
+                });
             }
         });
 
         return view;
     }
 
-    private void goToQuestionDetail(View view) {
+    private void goToQuestionDetail(View view, Question question) {
         Intent intent = new Intent(view.getContext(),QuestionActivity.class);
-        Bundle bundle;
+        Bundle bundle = new Bundle();
 
-        intent.putExtra(QuestionActivity.MESSAGE_QUESTION_TITLE,((TextView) view.findViewById(R.id.question_title)).getText());
-        intent.putExtra(QuestionActivity.MESSAGE_QUESTION_AUTHOR,((TextView) view.findViewById(R.id.question_author)).getText());
-        intent.putExtra(QuestionActivity.MESSAGE_QUESTION_N_ANSWERS,((TextView) view.findViewById(R.id.question_answer_number)).getText());
+        intent.putExtra(QuestionActivity.MESSAGE_QUESTION_ID,question.getId());
+        intent.putExtra(QuestionActivity.MESSAGE_QUESTION_TITLE,question.getTitle());
+        intent.putExtra(QuestionActivity.MESSAGE_QUESTION_BODY,question.getText());
+        intent.putExtra(QuestionActivity.MESSAGE_QUESTION_AUTHOR,question.getAuthor());
+        intent.putExtra(QuestionActivity.MESSAGE_QUESTION_AUTHOR_TYPE,question.getAuthorType());
+        intent.putExtra(QuestionActivity.MESSAGE_QUESTION_N_ANSWERS,question.getAnswers());
 
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP && false) {
 
             Pair<View, String>[] transitionPairs = TransitionHelper.createSafeTransitionParticipants(getActivity(),true,
 
@@ -209,7 +308,7 @@ public class QuestionsListFragment extends Fragment implements SwipeRefreshLayou
                     Pair.create(view.findViewById(R.id.question_title),"question_title"),
                     Pair.create(view.findViewById(R.id.question_author),"question_author"),
                     Pair.create(view.findViewById(R.id.question_star),"question_star"),
-                    Pair.create(view.findViewById(R.id.question_answer_number),"question_answer_number"),
+                    Pair.create(view.findViewById(R.id.answer_item_score),"question_answer_number"),
 
                     // Adicionar o toolbar não funcionou muito bem. A intenção era acabar com o flicker ocasional.
                     Pair.create(getActivity().getWindow().getDecorView().findViewById(R.id.toolbar),"toolbar")
@@ -218,9 +317,7 @@ public class QuestionsListFragment extends Fragment implements SwipeRefreshLayou
 
             ActivityOptionsCompat options = ActivityOptionsCompat.makeSceneTransitionAnimation(getActivity(),transitionPairs);
 
-            bundle = options.toBundle();
-        } else {
-            bundle = new Bundle();
+            bundle.putAll(options.toBundle());
         }
 
         ActivityCompat.startActivity(getActivity(),intent,bundle);
@@ -231,6 +328,7 @@ public class QuestionsListFragment extends Fragment implements SwipeRefreshLayou
         SimpleCallBackWithBackground simpleItemTouchCallback = new SimpleCallBackWithBackground(container.getContext(),0, ItemTouchHelper.LEFT | ItemTouchHelper.RIGHT) {
 
             @Override
+            @Contract(value = "_, _, _ -> false", pure = true)
             public boolean onMove(RecyclerView recyclerView, RecyclerView.ViewHolder viewHolder, RecyclerView.ViewHolder target) {
                 return false;
             }
@@ -253,6 +351,7 @@ public class QuestionsListFragment extends Fragment implements SwipeRefreshLayou
                     }
 
                     @Override
+                    @Contract(value = " -> true", pure = true)
                     public boolean willChangeBounds() {
                         return true;
                     }
@@ -267,13 +366,8 @@ public class QuestionsListFragment extends Fragment implements SwipeRefreshLayou
                         int itemPosition = viewHolder.getAdapterPosition();
                         if (itemPosition == -1) return;
 
-                        List<String> questions = questionsAdapter.getQuestions();
-                        List<String> authors = questionsAdapter.getAuthors();
-                        List<Integer> answers = questionsAdapter.getAnswers();
+                        questionsAdapter.questions.remove(itemPosition);
 
-                        questions.remove(itemPosition);
-                        authors.remove(itemPosition);
-                        answers.remove(itemPosition);
                         questionsAdapter.notifyItemRemoved(itemPosition);
 
                         new Handler().postDelayed(new Runnable() {
@@ -293,35 +387,6 @@ public class QuestionsListFragment extends Fragment implements SwipeRefreshLayou
 
                 //TODO: Implement Undo Listener
             }
-
-//            @Override
-//            public int getMovementFlags(RecyclerView recyclerView, RecyclerView.ViewHolder viewHolder) {
-//                if (viewHolder instanceof RemovableViewHolder) {
-//                    int swipeFlags = ItemTouchHelper.START | ItemTouchHelper.END;
-//                    return makeMovementFlags(0, swipeFlags);
-//                } else
-//                    return 0;
-//            }
-//
-//            @Override
-//            public void clearView(RecyclerView recyclerView, RecyclerView.ViewHolder viewHolder) {
-//                getDefaultUIUtil().clearView(((RemovableViewHolder) viewHolder).getSwipableView());
-//            }
-//
-//            @Override
-//            public void onSelectedChanged(RecyclerView.ViewHolder viewHolder, int actionState) {
-//                if (viewHolder != null) {
-//                    getDefaultUIUtil().onSelected(((RemovableViewHolder) viewHolder).getSwipableView());
-//                }
-//            }
-//
-//            public void onChildDraw(Canvas c, RecyclerView recyclerView, RecyclerView.ViewHolder viewHolder, float dX, float dY, int actionState, boolean isCurrentlyActive) {
-//                getDefaultUIUtil().onDraw(c, recyclerView, ((RemovableViewHolder) viewHolder).getSwipableView(), dX, dY,    actionState, isCurrentlyActive);
-//            }
-//
-//            public void onChildDrawOver(Canvas c, RecyclerView recyclerView, RecyclerView.ViewHolder viewHolder, float dX, float dY, int actionState, boolean isCurrentlyActive) {
-//                getDefaultUIUtil().onDrawOver(c, recyclerView, ((RemovableViewHolder) viewHolder).getSwipableView(), dX, dY,    actionState, isCurrentlyActive);
-//            }
 
         };
         simpleItemTouchCallback
