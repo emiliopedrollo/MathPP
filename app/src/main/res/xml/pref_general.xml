@@ -32,7 +32,7 @@
          dismiss it. -->
     <!-- NOTE: ListPreference's summary should be set to its value by the activity code. -->
     <ListPreference
-        android:defaultValue="0"
+        android:defaultValue="student"
         android:entries="@array/pref_user_type_titles"
         android:entryValues="@array/pref_user_type_values"
         android:key="user_category"
