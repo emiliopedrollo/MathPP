@@ -7,7 +7,10 @@ public class Answer {
     private String author;
     private String authorType;
     private String authorIMEI;
+    private int question;
     private int score;
+
+    public Answer(){}
 
     public Answer(int id, String title, String text, String author, String authorType, int score){
         this.id = id;
@@ -68,5 +71,13 @@ public class Answer {
 
     public int getId() {
         return id;
+    }
+
+    public int getQuestion() {
+        return question;
+    }
+
+    public void setQuestion(int question) {
+        this.question = question;
     }
 }
