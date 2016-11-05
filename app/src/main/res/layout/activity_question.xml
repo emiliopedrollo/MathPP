@@ -6,6 +6,7 @@
     android:layout_height="match_parent"
     android:clipChildren="false"
     android:fitsSystemWindows="true"
+    android:background="@android:color/white"
     tools:context="br.nom.pedrollo.emilio.mathpp.QuestionActivity">
 
     <android.support.design.widget.AppBarLayout
