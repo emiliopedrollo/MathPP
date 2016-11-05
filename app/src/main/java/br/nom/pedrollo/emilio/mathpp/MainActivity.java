@@ -1,6 +1,8 @@
 package br.nom.pedrollo.emilio.mathpp;
 
+import android.annotation.SuppressLint;
 import android.annotation.TargetApi;
+import android.app.Activity;
 import android.app.FragmentManager;
 import android.app.FragmentTransaction;
 import android.app.SearchManager;
@@ -11,14 +13,17 @@ import android.content.pm.PackageManager;
 import android.graphics.Color;
 import android.net.ConnectivityManager;
 import android.net.NetworkInfo;
+import android.net.Uri;
 import android.os.AsyncTask;
 import android.os.Build;
 import android.os.Bundle;
 import android.preference.PreferenceManager;
 import android.support.annotation.NonNull;
+import android.support.customtabs.CustomTabsIntent;
 import android.support.design.widget.CoordinatorLayout;
 import android.support.design.widget.FloatingActionButton;
 import android.support.v4.app.ActivityCompat;
+import android.support.v4.content.ContextCompat;
 import android.support.v4.view.MenuItemCompat;
 import android.support.v7.widget.SearchView;
 import android.util.Log;
@@ -31,6 +36,10 @@ import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
 import android.view.Menu;
 import android.view.MenuItem;
+import android.webkit.WebResourceError;
+import android.webkit.WebResourceRequest;
+import android.webkit.WebView;
+import android.webkit.WebViewClient;
 import android.widget.AdapterView;
 import android.widget.GridView;
 import android.widget.ProgressBar;
@@ -354,6 +363,7 @@ public class MainActivity extends AppCompatActivity
         return super.onOptionsItemSelected(item);
     }
 
+    @SuppressLint("SetJavaScriptEnabled")
     @SuppressWarnings("StatementWithEmptyBody")
     @Override
     public boolean onNavigationItemSelected(@NonNull MenuItem item) {
@@ -362,25 +372,41 @@ public class MainActivity extends AppCompatActivity
 
         try {
 
-            if (id == R.id.nav_categories) {
-                return true;
-            } else if (id == R.id.nav_favorites) {
-                Toast.makeText(this, getResources().getString(R.string.not_available_yet), Toast.LENGTH_SHORT).show();
-            } else if (id == R.id.nav_settings) {
-                Intent intent = new Intent(getApplicationContext(),SettingsActivity.class);
-                ActivityCompat.startActivity(this,intent,null);
-                return true;
-            } else if (id == R.id.nav_info) {
-                Toast.makeText(this, getResources().getString(R.string.not_available_yet), Toast.LENGTH_SHORT).show();
-            } else if (id == R.id.nav_exit) {
-                this.finishAffinity();
-                return true;
+            switch (id){
+                case R.id.nav_categories:
+                    return true;
+                case R.id.nav_favorites:
+                    Toast.makeText(this, getResources().getString(R.string.not_available_yet), Toast.LENGTH_SHORT).show();
+                    break;
+                case R.id.nav_settings:
+                    Intent intent = new Intent(getApplicationContext(),SettingsActivity.class);
+                    ActivityCompat.startActivity(this,intent,null);
+                    return true;
+                case R.id.nav_report:
+                    String url = "https://github.com/emiliopedrollo/MathPP/issues/new";
+                    CustomTabsIntent.Builder builder = new CustomTabsIntent.Builder();
+                    builder.setToolbarColor(ContextCompat.getColor(this,R.color.colorPrimary));
+                    CustomTabsIntent customTabsIntent = builder.build();
+                    customTabsIntent.launchUrl(this, Uri.parse(url));
+                    return true;
+                case R.id.nav_info:
+                    Toast.makeText(this, getResources().getString(R.string.not_available_yet), Toast.LENGTH_SHORT).show();
+                    break;
+                case R.id.nav_exit:
+                    this.finishAffinity();
+                    return true;
             }
             return false;
         } finally {
             DrawerLayout drawer = (DrawerLayout) findViewById(R.id.drawer_layout);
             drawer.closeDrawer(GravityCompat.START);
         }
+
+    }
+
+    @Override
+    protected void onActivityResult(int requestCode, int resultCode, Intent data) {
+        super.onActivityResult(requestCode, resultCode, data);
 
     }
 }
