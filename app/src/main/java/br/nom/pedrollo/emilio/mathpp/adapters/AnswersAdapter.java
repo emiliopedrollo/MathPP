@@ -30,9 +30,8 @@ public class AnswersAdapter extends RecyclerView.Adapter<AnswersAdapter.ViewHold
     }
 
     public static class ViewHolder extends RecyclerView.ViewHolder {
-        public FrameLayout answerItem;
+        public LinearLayout answerItem;
         public LinearLayout answerBody;
-        public ImageView answerAuthorIcon;
         public TextView answerTitle;
         public TextView answerAuthor;
         public TextView answerScore;
@@ -41,10 +40,9 @@ public class AnswersAdapter extends RecyclerView.Adapter<AnswersAdapter.ViewHold
 
         ViewHolder(View itemView) {
             super(itemView);
-            answerItem = (FrameLayout) itemView.findViewById(R.id.answer_item_background);
+            answerItem = (LinearLayout) itemView.findViewById(R.id.answer_item_background);
 
             answerBody = (LinearLayout) answerItem.findViewById(R.id.answer_item_body);
-            answerAuthorIcon = (ImageView) answerItem.findViewById(R.id.answer_item_author_icon);
             answerTitle = (TextView) answerItem.findViewById(R.id.answer_item_title);
             answerAuthor = (TextView) answerItem.findViewById(R.id.answer_item_author);
             answerScore = (TextView) answerItem.findViewById(R.id.answer_item_score);
@@ -77,8 +75,30 @@ public class AnswersAdapter extends RecyclerView.Adapter<AnswersAdapter.ViewHold
         Answer answer = answers.get(position);
 
         holder.answerTitle.setText( answer.getTitle() );
-        holder.answerAuthor.setText(String.format(userRespondsString,answer.getAuthor()));
+        holder.answerAuthor.setText( String.format(userRespondsString,answer.getAuthor()) );
         holder.answerScore.setText( String.format(Locale.getDefault(),"%d",answer.getScore()) );
+
+
+        switch (answer.getAuthorType()){
+            case "student":
+                holder.answerAuthor.setCompoundDrawablesWithIntrinsicBounds(
+                        ContextCompat.getDrawable(
+                                holder.itemView.getContext(),R.drawable.ic_person_outline_black_24dp),
+                        null,null,null);
+                break;
+            case "monitor":
+                holder.answerAuthor.setCompoundDrawablesWithIntrinsicBounds(
+                        ContextCompat.getDrawable(
+                                holder.itemView.getContext(),R.drawable.ic_person_black_24dp),
+                        null,null,null);
+                break;
+            case "teacher":
+                holder.answerAuthor.setCompoundDrawablesWithIntrinsicBounds(
+                        ContextCompat.getDrawable(
+                                holder.itemView.getContext(),R.drawable.ic_school_black_24dp),
+                        null,null,null);
+                break;
+        }
 
         onBindViewHolder.onBindViewHolder(holder,position);
     }

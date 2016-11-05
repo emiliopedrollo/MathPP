@@ -457,7 +457,6 @@ public class QuestionActivity extends AppCompatActivity {
         TextView questionAuthor = (TextView) findViewById(R.id.question_author);
         TextView questionTitle = (TextView) findViewById(R.id.question_title);
         TextView questionAnswerNumber = (TextView) findViewById(R.id.answer_item_score);
-        ImageView questionAuthorIcon = (ImageView) findViewById(R.id.question_author_icon);
 
         questionId = intent.getIntExtra(MESSAGE_QUESTION_ID,-1);
 
@@ -466,19 +465,30 @@ public class QuestionActivity extends AppCompatActivity {
 
         switch (intent.getStringExtra(MESSAGE_QUESTION_AUTHOR_TYPE)){
             case "student":
-                questionAuthorIcon.setImageResource(R.drawable.ic_person_outline_black_24dp);
+                questionAuthor.setCompoundDrawablesWithIntrinsicBounds(
+                        ContextCompat.getDrawable(
+                                getBaseContext(),R.drawable.ic_person_outline_black_24dp),
+                        null,null,null);
                 break;
             case "monitor":
-                questionAuthorIcon.setImageResource(R.drawable.ic_person_black_24dp);
+                questionAuthor.setCompoundDrawablesWithIntrinsicBounds(
+                        ContextCompat.getDrawable(
+                                getBaseContext(),R.drawable.ic_person_black_24dp),
+                        null,null,null);
                 break;
             case "teacher":
-                questionAuthorIcon.setImageResource(R.drawable.ic_school_black_24dp);
+                questionAuthor.setCompoundDrawablesWithIntrinsicBounds(
+                        ContextCompat.getDrawable(
+                                getBaseContext(),R.drawable.ic_school_black_24dp),
+                        null,null,null);
                 break;
         }
 
-        questionAuthor.setText(intent.getStringExtra(MESSAGE_QUESTION_AUTHOR));
-        questionTitle.setText(intent.getStringExtra(MESSAGE_QUESTION_TITLE));
-        questionAnswerNumber.setText(String.format(Locale.getDefault(),"%d",intent.getIntExtra(MESSAGE_QUESTION_N_ANSWERS,0)));
+        String userAskedString = getResources().getString(R.string.user_asked);
+
+        questionAuthor.setText( String.format(userAskedString,intent.getStringExtra(MESSAGE_QUESTION_AUTHOR)) );
+        questionTitle.setText( intent.getStringExtra(MESSAGE_QUESTION_TITLE) );
+        questionAnswerNumber.setText( String.format(Locale.getDefault(),"%d",intent.getIntExtra(MESSAGE_QUESTION_N_ANSWERS,0)) );
 
         createBody(questionBody,intent.getStringExtra(MESSAGE_QUESTION_BODY),BodyType.QUESTION);
 

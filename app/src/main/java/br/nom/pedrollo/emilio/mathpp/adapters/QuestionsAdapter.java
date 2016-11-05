@@ -1,5 +1,6 @@
 package br.nom.pedrollo.emilio.mathpp.adapters;
 
+import android.support.v4.content.ContextCompat;
 import android.support.v7.widget.RecyclerView;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -28,7 +29,6 @@ public class QuestionsAdapter extends RecyclerView.Adapter<QuestionsAdapter.View
 
     public static class ViewHolder extends RecyclerView.ViewHolder {
         FrameLayout questionListItem;
-        ImageView authorIcon;
         TextView questionTitle;
         TextView numAnswers;
         TextView questionAuthor;
@@ -38,7 +38,6 @@ public class QuestionsAdapter extends RecyclerView.Adapter<QuestionsAdapter.View
             super(itemView);
             questionListItem = (FrameLayout) itemView;
 
-            authorIcon = (ImageView) questionListItem.findViewById(R.id.question_author_icon);
             questionTitle = (TextView) questionListItem.findViewById(R.id.question_title);
             numAnswers = (TextView) questionListItem.findViewById(R.id.answer_item_score);
             questionAuthor = (TextView) questionListItem.findViewById(R.id.question_author);
@@ -88,13 +87,22 @@ public class QuestionsAdapter extends RecyclerView.Adapter<QuestionsAdapter.View
 
         switch (questions.get(position).getAuthorType()){
             case "student":
-                holder.authorIcon.setImageResource(R.drawable.ic_person_outline_black_24dp);
+                holder.questionAuthor.setCompoundDrawablesWithIntrinsicBounds(
+                        ContextCompat.getDrawable(
+                                holder.itemView.getContext(),R.drawable.ic_person_outline_black_24dp),
+                        null,null,null);
                 break;
             case "monitor":
-                holder.authorIcon.setImageResource(R.drawable.ic_person_black_24dp);
+                holder.questionAuthor.setCompoundDrawablesWithIntrinsicBounds(
+                        ContextCompat.getDrawable(
+                                holder.itemView.getContext(),R.drawable.ic_person_black_24dp),
+                        null,null,null);
                 break;
             case "teacher":
-                holder.authorIcon.setImageResource(R.drawable.ic_school_black_24dp);
+                holder.questionAuthor.setCompoundDrawablesWithIntrinsicBounds(
+                        ContextCompat.getDrawable(
+                                holder.itemView.getContext(),R.drawable.ic_school_black_24dp),
+                        null,null,null);
                 break;
         }
 

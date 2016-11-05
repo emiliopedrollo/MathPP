@@ -1,142 +1,112 @@
 <?xml version="1.0" encoding="utf-8"?>
-<FrameLayout
+<LinearLayout
     xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools"
     android:id="@+id/answer_item_background"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
     android:background="#eee"
+    android:orientation="vertical"
     tools:targetApi="lollipop">
 
-    <RelativeLayout
-        android:id="@+id/answer_item_layout"
-        android:orientation="vertical"
+    <LinearLayout
+        android:baselineAligned="false"
         android:layout_width="match_parent"
-        android:layout_height="wrap_content">
+        android:layout_height="wrap_content"
+        android:orientation="horizontal">
 
         <LinearLayout
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:orientation="vertical">
+            android:layout_width="wrap_content"
+            android:layout_height="match_parent"
+            android:minWidth="80dp"
+            android:gravity="top|center_horizontal"
+            android:orientation="vertical"
+            android:paddingLeft="16dp"
+            android:paddingStart="16dp"
+            android:paddingRight="16dp"
+            android:paddingEnd="16dp"
+            android:paddingBottom="16dp"
+            android:clipToPadding="false">
 
-            <LinearLayout
-                android:baselineAligned="false"
+            <ImageButton
+                android:id="@+id/thumbs_up_vote"
+                android:layout_width="24dp"
+                android:layout_height="24dp"
+                android:layout_marginTop="16dp"
+                android:layout_marginBottom="3dp"
+                android:contentDescription="@string/thumbs_up"
+                android:src="@drawable/ic_thumb_up_black_24dp"
+                style="@style/Widget.AppCompat.Button.Colored"
+                android:background="?android:attr/selectableItemBackgroundBorderless"/>
+
+            <TextView
+                android:id="@+id/answer_item_score"
+                tools:text="2"
+                android:textSize="24sp"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                />
+
+            <ImageButton
+                android:id="@+id/thumbs_down_vote"
+                android:layout_width="24dp"
+                android:layout_height="24dp"
+                android:layout_marginTop="3dp"
+                android:contentDescription="@string/thumbs_down"
+                android:src="@drawable/ic_thumb_down_black_24dp"
+                style="@style/Widget.AppCompat.Button.Colored"
+                android:background="?android:attr/selectableItemBackgroundBorderless"/>
+        </LinearLayout>
+
+        <LinearLayout
+            android:layout_width="0dp"
+            android:layout_height="match_parent"
+            android:orientation="vertical"
+            android:layout_weight="1"
+            android:padding="16dp"
+            android:clipToPadding="false">
+
+
+            <TextView
+                android:id="@+id/answer_item_author"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:orientation="horizontal">
+                android:layout_gravity="center"
+                android:drawablePadding="4dp"
+                android:drawableStart="@drawable/ic_person_outline_black_24dp"
+                android:drawableLeft="@drawable/ic_person_outline_black_24dp"
+                android:text="@string/user_responded"/>
 
-                <LinearLayout
-                    android:layout_width="0dp"
-                    android:layout_height="match_parent"
-                    android:orientation="vertical"
-                    android:layout_weight="1"
-                    android:padding="16dp"
-                    android:clipToPadding="false">
-
-                    <LinearLayout
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:orientation="horizontal">
-
-                        <ImageView
-                            android:id="@+id/answer_item_author_icon"
-                            android:contentDescription="@string/icon_student"
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:src="@drawable/ic_person_outline_black_24dp"/>
-
-                        <TextView
-                            android:id="@+id/answer_item_author"
-                            android:layout_width="match_parent"
-                            android:layout_height="wrap_content"
-                            android:layout_gravity="center"
-                            android:layout_marginStart="4dp"
-                            android:layout_marginLeft="4dp"
-                            android:text="@string/user_responded"/>
-
-                    </LinearLayout>
-
-                    <TextView
-                        android:id="@+id/answer_item_title"
-                        tools:text="This is a test using a very long text so deal with it or else"
-                        android:textSize="18sp"
-                        android:textColor="@android:color/secondary_text_light"
-                        android:fontFamily="sans-serif"
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:layout_marginTop="4dp"
-                        android:gravity="start|center_vertical"/>
-
-                </LinearLayout>
-
-                <LinearLayout
-                    android:layout_width="wrap_content"
-                    android:layout_height="match_parent"
-                    android:minWidth="80dp"
-                    android:gravity="top|center_horizontal"
-                    android:orientation="vertical"
-                    android:paddingLeft="16dp"
-                    android:paddingStart="16dp"
-                    android:paddingRight="16dp"
-                    android:paddingEnd="16dp"
-                    android:paddingBottom="16dp"
-                    android:clipToPadding="false">
-
-                    <ImageButton
-                        android:id="@+id/thumbs_up_vote"
-                        android:layout_width="24dp"
-                        android:layout_height="24dp"
-                        android:layout_marginTop="16dp"
-                        android:layout_marginBottom="3dp"
-                        android:contentDescription="@string/thumbs_up"
-                        android:src="@drawable/ic_thumb_up_black_24dp"
-                        style="@style/Widget.AppCompat.Button.Colored"
-                        android:background="?android:attr/selectableItemBackgroundBorderless"/>
-
-                    <TextView
-                        android:id="@+id/answer_item_score"
-                        tools:text="2"
-                        android:textSize="24sp"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        />
-
-                    <ImageButton
-                        android:id="@+id/thumbs_down_vote"
-                        android:layout_width="24dp"
-                        android:layout_height="24dp"
-                        android:layout_marginTop="3dp"
-                        android:contentDescription="@string/thumbs_down"
-                        android:src="@drawable/ic_thumb_down_black_24dp"
-                        style="@style/Widget.AppCompat.Button.Colored"
-                        android:background="?android:attr/selectableItemBackgroundBorderless"/>
-                </LinearLayout>
-
-            </LinearLayout>
+            <TextView
+                android:id="@+id/answer_item_title"
+                tools:text="This is a test using a very long text so deal with it or else"
+                android:textSize="18sp"
+                android:textColor="@android:color/secondary_text_light"
+                android:fontFamily="sans-serif"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="4dp"
+                android:gravity="start|center_vertical"/>
 
             <LinearLayout
                 android:id="@+id/answer_item_body"
                 android:orientation="vertical"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:paddingStart="16dp"
-                android:paddingLeft="16dp"
-                android:paddingRight="16dp"
-                android:paddingEnd="16dp"
-                android:paddingBottom="16dp"
+                android:layout_marginTop="16dp"
                 android:clipToPadding="false">
 
             </LinearLayout>
 
-
-            <View
-                android:layout_width="match_parent"
-                android:layout_height="1dp"
-                android:background="?android:attr/listDivider"/>
-
         </LinearLayout>
 
-    </RelativeLayout>
+    </LinearLayout>
 
-</FrameLayout>
+
+    <View
+        android:layout_width="match_parent"
+        android:layout_height="1dp"
+        android:background="?android:attr/listDivider"/>
+
+</LinearLayout>
 

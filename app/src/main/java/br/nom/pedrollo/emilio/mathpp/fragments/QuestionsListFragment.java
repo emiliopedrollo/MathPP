@@ -303,7 +303,7 @@ public class QuestionsListFragment extends Fragment implements SwipeRefreshLayou
 
                     Pair.create( ((MainActivity) getActivity()).getToolbarView() ,"toolbar"),
 
-                    Pair.create(view.findViewById(R.id.question_item_scene_root),"content_area"),
+                    //Pair.create(view.findViewById(R.id.question_item_scene_root),"content_area"),
                     Pair.create(view.findViewById(R.id.question_header),"question_header"),
                     Pair.create(view.findViewById(R.id.question_title),"question_title"),
                     Pair.create(view.findViewById(R.id.question_author),"question_author"),
