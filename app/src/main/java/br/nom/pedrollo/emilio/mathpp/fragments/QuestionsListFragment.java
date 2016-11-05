@@ -12,7 +12,6 @@ import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
 import android.support.annotation.Nullable;
-import android.support.design.widget.NavigationView;
 import android.support.design.widget.Snackbar;
 import android.support.v4.app.ActivityCompat;
 import android.support.v4.app.ActivityOptionsCompat;
@@ -40,6 +39,8 @@ import org.jetbrains.annotations.Contract;
 import org.json.JSONException;
 import org.json.JSONObject;
 
+import java.util.Collections;
+import java.util.Comparator;
 import java.util.HashMap;
 
 import br.nom.pedrollo.emilio.mathpp.MainActivity;
@@ -54,8 +55,6 @@ import br.nom.pedrollo.emilio.mathpp.utils.TransitionHelper;
 
 // TODO: Implement infinite scroll
 
-// TODO: Implement and verify user type, using the correct icon
-
 public class QuestionsListFragment extends Fragment implements SwipeRefreshLayout.OnRefreshListener {
 
     public final static String CATEGORY = "CATEGORY";
@@ -69,13 +68,12 @@ public class QuestionsListFragment extends Fragment implements SwipeRefreshLayou
 
     @Override
     public void onRefresh() {
-        Log.i("QUESTION_LIST_REFRESH", "onRefresh called from SwipeRefreshLayout");
-        new Handler().postDelayed(new Runnable() {
-            @Override public void run() {
+        loadQuestions(new CollectParams(), new OnLoadQuestionsFinish() {
+            @Override
+            public void onFinish(Boolean success) {
                 swipeRefreshLayout.setRefreshing(false);
             }
-        }, 4000);
-        //TODO: make it really reload
+        });
     }
 
     @Override
@@ -95,17 +93,39 @@ public class QuestionsListFragment extends Fragment implements SwipeRefreshLayou
         switch (item.getItemId()) {
             case R.id.action_add_question:
                 Intent intent = new Intent(getActivity(),WritePostActivity.class);
-                intent.putExtra("Category",categoryId);
-                ActivityCompat.startActivity(getActivity(),intent,null);
+                intent.putExtra(WritePostActivity.INTENT_KEY_CATEGORY,categoryId);
+                intent.putExtra(WritePostActivity.INTENT_KEY_POST_TYPE,WritePostActivity.POST_TYPE_QUESTION);
+                startActivityForResult(intent,1,null);
                 return true;
             default:
                 return super.onOptionsItemSelected(item);
         }
     }
 
+    @Override
+    public void onActivityResult(int requestCode, int resultCode, Intent data) {
+        super.onActivityResult(requestCode, resultCode, data);
+
+        if (resultCode == WritePostActivity.POST_RESULT_SUCCESSFUL){
+            Intent intent = new Intent(getActivity(),QuestionActivity.class);
+
+            intent.putExtra(QuestionActivity.MESSAGE_QUESTION_ID,data.getIntExtra(WritePostActivity.POST_NEW_ID,0));
+            intent.putExtra(QuestionActivity.MESSAGE_QUESTION_TITLE,data.getStringExtra("Title"));
+            intent.putExtra(QuestionActivity.MESSAGE_QUESTION_BODY,data.getStringExtra("Body"));
+            intent.putExtra(QuestionActivity.MESSAGE_QUESTION_AUTHOR,data.getStringExtra("Author"));
+            intent.putExtra(QuestionActivity.MESSAGE_QUESTION_AUTHOR_TYPE,data.getStringExtra("AuthorType"));
+            intent.putExtra(QuestionActivity.MESSAGE_QUESTION_N_ANSWERS,0);
+
+            ActivityCompat.startActivity(getActivity(),intent,null);
+
+            loadQuestions(new CollectParams());
+        }
+
+    }
+
     private class CollectParams {
-        public int offset;
-        public int limit;
+        int offset;
+        int limit;
 
         CollectParams(){
             this.offset = 0;
@@ -146,40 +166,30 @@ public class QuestionsListFragment extends Fragment implements SwipeRefreshLayou
         }
     }
 
-    @Override
-    public View onCreateView(LayoutInflater inflater, ViewGroup container,
-                             Bundle savedInstanceState) {
+    interface OnLoadQuestionsFinish{
+        void onFinish(Boolean success);
+    }
 
-        final View view = inflater.inflate(R.layout.fragment_question_list, container, false);
+    private void loadQuestions(CollectParams params){
+        loadQuestions(params, new OnLoadQuestionsFinish() {
+            @Override
+            public void onFinish(Boolean success) {}
+        });
+    }
 
-        questionsPlaceholder = (RelativeLayout) view.findViewById(R.id.questions_placeholder);
-        final ProgressBar questionsPlaceholderProgressbar = (ProgressBar) view.findViewById(R.id.questions_placeholder_progressbar);
-        final TextView questionsPlaceholderTextView = (TextView) view.findViewById(R.id.questions_placeholder_text_view);
-
-        questionsList = (RecyclerView) view.findViewById(R.id.questions_list);
-        questionsList.setItemAnimator(new DefaultItemAnimator());
-        questionsList.setLayoutManager(new LinearLayoutManager(view.getContext()));
-        questionsList.setAdapter(new QuestionsAdapter());
-        questionsList.setHasFixedSize(true);
-
-        swipeRefreshLayout = (SwipeRefreshLayout) view.findViewById(R.id.swipe_refresh_question_list);
-        swipeRefreshLayout.setOnRefreshListener(this);
-        swipeRefreshLayout.setColorSchemeColors(
-                ContextCompat.getColor(view.getContext(),R.color.colorPrimaryDark),
-                ContextCompat.getColor(view.getContext(),R.color.colorAccent));
-
-        fixOverScroll((LinearLayoutManager) questionsList.getLayoutManager());
-        handleSwipe(container, (QuestionsAdapter) questionsList.getAdapter());
-
-
-        ConnectivityManager connMgr = (ConnectivityManager) view.getContext().getSystemService(Context.CONNECTIVITY_SERVICE);
+    private void loadQuestions(CollectParams params, final OnLoadQuestionsFinish onLoadQuestionsFinish){
+        final ProgressBar questionsPlaceholderProgressbar = (ProgressBar) questionsPlaceholder.findViewById(R.id.questions_placeholder_progressbar);
+        final TextView questionsPlaceholderTextView = (TextView) questionsPlaceholder.findViewById(R.id.questions_placeholder_text_view);
+        ConnectivityManager connMgr = (ConnectivityManager) getActivity().getSystemService(Context.CONNECTIVITY_SERVICE);
         NetworkInfo networkInfo = connMgr.getActiveNetworkInfo();
 
         if (networkInfo != null && networkInfo.isConnected()) {
 
-            questionsPlaceholder.setVisibility(View.VISIBLE);
-            questionsPlaceholderProgressbar.setVisibility(View.VISIBLE);
-            questionsPlaceholderTextView.setText(getResources().getString(R.string.loading_questions));
+            if (!alreadyLoadedCategoriesOnce){
+                questionsPlaceholder.setVisibility(View.VISIBLE);
+                questionsPlaceholderProgressbar.setVisibility(View.VISIBLE);
+                questionsPlaceholderTextView.setText(getResources().getString(R.string.loading_questions));
+            }
 
             new getQuestionsTask(){
                 @Override
@@ -239,18 +249,29 @@ public class QuestionsListFragment extends Fragment implements SwipeRefreshLayou
                                     questionsPlaceholderProgressbar.setVisibility(View.GONE);
                                     questionsPlaceholderTextView.setText(getResources().getString(R.string.no_categories_available));
                                 }
+
+                                Collections.sort(adapter.questions, new Comparator<Question>() {
+                                    @Override
+                                    public int compare(Question o1, Question o2) {
+                                        return  (o1.getId() < o2.getId())?1:-1;
+                                    }
+                                });
+
                                 adapter.notifyDataSetChanged();
+
                             } else {
                                 questionsList.setVisibility(View.GONE);
                                 questionsPlaceholder.setVisibility(View.VISIBLE);
                                 questionsPlaceholderProgressbar.setVisibility(View.GONE);
                                 questionsPlaceholderTextView.setText(getResources().getString(R.string.unable_retrieve_categories));
                             }
+
+                            onLoadQuestionsFinish.onFinish(success);
                         }
                     });
 
                 }
-            }.execute(new CollectParams());
+            }.execute(params);
 
 
         } else {
@@ -258,6 +279,34 @@ public class QuestionsListFragment extends Fragment implements SwipeRefreshLayou
             questionsPlaceholder.setVisibility(View.VISIBLE);
             questionsPlaceholderProgressbar.setVisibility(View.GONE);
         }
+    }
+
+    @Override
+    public View onCreateView(LayoutInflater inflater, ViewGroup container,
+                             Bundle savedInstanceState) {
+
+        final View view = inflater.inflate(R.layout.fragment_question_list, container, false);
+
+        questionsPlaceholder = (RelativeLayout) view.findViewById(R.id.questions_placeholder);
+        final ProgressBar questionsPlaceholderProgressbar = (ProgressBar) view.findViewById(R.id.questions_placeholder_progressbar);
+        final TextView questionsPlaceholderTextView = (TextView) view.findViewById(R.id.questions_placeholder_text_view);
+
+        questionsList = (RecyclerView) view.findViewById(R.id.questions_list);
+        questionsList.setItemAnimator(new DefaultItemAnimator());
+        questionsList.setLayoutManager(new LinearLayoutManager(view.getContext()));
+        questionsList.setAdapter(new QuestionsAdapter());
+        questionsList.setHasFixedSize(true);
+
+        swipeRefreshLayout = (SwipeRefreshLayout) view.findViewById(R.id.swipe_refresh_question_list);
+        swipeRefreshLayout.setOnRefreshListener(this);
+        swipeRefreshLayout.setColorSchemeColors(
+                ContextCompat.getColor(view.getContext(),R.color.colorPrimaryDark),
+                ContextCompat.getColor(view.getContext(),R.color.colorAccent));
+
+        fixOverScroll((LinearLayoutManager) questionsList.getLayoutManager());
+        handleSwipe(container, (QuestionsAdapter) questionsList.getAdapter());
+
+        loadQuestions(new CollectParams());
 
         ((QuestionsAdapter)questionsList.getAdapter()).setOnBindViewHolder(new QuestionsAdapter.OnBindViewHolder() {
             @Override
