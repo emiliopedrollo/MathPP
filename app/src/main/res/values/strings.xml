@@ -19,7 +19,7 @@
     <string name="nav_info">Info</string>
     <string name="nav_exit">Exit</string>
 
-    <string name="search_hint">Search Questions&#8230;</string>
+    <string name="search_hint">Search Questions…</string>
 
     <string name="no_internet_connection">No internet connection!</string>
     <string name="unable_retrieve_categories">Unable to retrieve categories from server.</string>
@@ -28,13 +28,13 @@
 
     <string name="category_image">Category image</string>
     <string name="no_categories_available">No categories available</string>
-    <string name="loading_categories">Loading categories&#8230;</string>
+    <string name="loading_categories">Loading categories…</string>
 
     <string name="no_questions_available">There are no questions yet</string>
-    <string name="loading_questions">Loading questions&#8230;</string>
+    <string name="loading_questions">Loading questions…</string>
 
     <string name="no_answers_available">There are no answers yet</string>
-    <string name="loading_answers">Loading answers&#8230;</string>
+    <string name="loading_answers">Loading answers…</string>
 
     <string name="user_asked">%1$s ask:</string>
     <string name="user_responded">%1$s responds:</string>
@@ -81,9 +81,9 @@
         <item>Teacher</item>
     </string-array>
     <string-array name="pref_user_type_values">
-        <item>0</item>
-        <item>1</item>
-        <item>2</item>
+        <item>student</item>
+        <item>monitor</item>
+        <item>teacher</item>
     </string-array>
 
     <!-- Example settings for Data & Sync -->
@@ -124,18 +124,19 @@
     <string name="pref_title_system_sync_settings">System sync settings</string>
 
     <!-- Example settings for Notifications -->
-    <string name="pref_header_notifications">Notifications</string>
+    <string name="pref_header_advanced">Advanced</string>
 
-    <string name="pref_title_new_message_notifications">New message notifications</string>
+    <string name="pref_title_enable_dev_server">Enable development server</string>
 
     <string name="pref_title_ringtone">Ringtone</string>
     <string name="pref_ringtone_silent">Silent</string>
 
-    <string name="pref_title_vibrate">Vibrate</string>
+    <string name="pref_title_enable_xdebug">Enable Xdebug</string>
     <string name="title_activity_write_post">WritePostActivity</string>
 
     <!-- Fetch/Input URL's -->
     <string name="fetch_hostname" translatable="false">https://mathpp.emilio.pedrollo.nom.br</string>
+    <string name="fetch_hostname_debug" translatable="false">https://mathpp.emilio.pedrollo.nom.br/app_dev.php</string>
 
     <string name="categories_fetch_uri" translatable="false">/categories</string>
     <string name="category_fetch_uri" translatable="false">/category/%1$s</string>
@@ -148,10 +149,18 @@
     <string name="answers_fetch_uri" translatable="false">/answers</string>
     <string name="answer_fetch_uri" translatable="false">/answer/%1$s</string>
     <string name="answer_input_uri" translatable="false">/answer</string>
-    <string name="write_title_hint">Title</string>
-    <string name="white_question_hint">Question</string>
+    <string name="write_post_title_hint">Title</string>
+    <string name="white_question_body_hint">Question</string>
+    <string name="white_answer_body_hint">Answer</string>
     <string name="new_question">New Question</string>
-    <string name="sending_question_dialog_message">Sending&#8230;</string>
+    <string name="new_answer">New Answer</string>
+    <string name="sending_post_dialog_message">Sending…</string>
     <string name="sending_question_dialog_title">Sending your question</string>
+    <string name="sending_answer_dialog_title">Sending your answer</string>
+    <string name="empty_question_title">Please enter question title…</string>
+    <string name="empty_question_body">Please enter question…</string>
+    <string name="empty_answer_title">Please enter answer title…</string>
+    <string name="empty_answer_body">Please enter answer…</string>
+    <string name="pref_key_enable_dev_server">advanced_enable_dev_server</string>
 
 </resources>
