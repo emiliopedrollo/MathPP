@@ -1,6 +1,7 @@
 package br.nom.pedrollo.emilio.mathpp;
 
 import android.annotation.TargetApi;
+import android.app.Activity;
 import android.content.Context;
 import android.content.Intent;
 import android.graphics.Typeface;
@@ -11,7 +12,7 @@ import android.os.Build;
 import android.os.Bundle;
 import android.support.annotation.Nullable;
 import android.support.design.widget.FloatingActionButton;
-import android.support.design.widget.Snackbar;
+import android.support.v4.app.ActivityCompat;
 import android.support.v4.content.ContextCompat;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.LinearLayoutManager;
@@ -38,6 +39,8 @@ import org.json.JSONObject;
 import java.io.BufferedReader;
 import java.io.StringReader;
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.Locale;
 import java.util.regex.Matcher;
@@ -73,12 +76,16 @@ public class QuestionActivity extends AppCompatActivity {
         toolbar.setTitle(getString(R.string.app_name));
         setSupportActionBar(toolbar);
 
+        final Activity activity = this;
+
         FloatingActionButton fab = (FloatingActionButton) findViewById(R.id.fab);
         fab.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                Snackbar.make(view, "Replace with your own action", Snackbar.LENGTH_LONG)
-                        .setAction("Action", this).show();
+                Intent intent = new Intent(getBaseContext(),WritePostActivity.class);
+                intent.putExtra(WritePostActivity.INTENT_KEY_QUESTION,questionId);
+                intent.putExtra(WritePostActivity.INTENT_KEY_POST_TYPE,WritePostActivity.POST_TYPE_ANSWER);
+                ActivityCompat.startActivityForResult(activity,intent,1,null);
             }
         });
 
@@ -86,8 +93,7 @@ public class QuestionActivity extends AppCompatActivity {
 
         handleIntent(getIntent());
 
-        populateAnswers();
-
+        loadAnswers();
 
         //setupTransition();
 
@@ -95,6 +101,15 @@ public class QuestionActivity extends AppCompatActivity {
         //TransitionHelper.fixSharedElementTransitionForStatusAndNavigationBar(this);
         //TransitionHelper.setSharedElementEnterTransition(this, R.transition.expand);
 
+    }
+
+    @Override
+    protected void onActivityResult(int requestCode, int resultCode, Intent data) {
+        super.onActivityResult(requestCode, resultCode, data);
+
+        if (resultCode == WritePostActivity.POST_RESULT_SUCCESSFUL){
+            loadAnswers();
+        }
     }
 
     @TargetApi(Build.VERSION_CODES.LOLLIPOP)
@@ -137,7 +152,7 @@ public class QuestionActivity extends AppCompatActivity {
         }
     }
 
-    private void populateAnswers() {
+    private void loadAnswers() {
 
         final RecyclerView answerList = (RecyclerView) findViewById(R.id.question_answers);
 
@@ -224,6 +239,14 @@ public class QuestionActivity extends AppCompatActivity {
                                     questionsAnswersPlaceholder.setVisibility(View.VISIBLE);
                                     questionsAnswersPlaceholderTextView.setText(getResources().getString(R.string.no_answers_available));
                                 }
+
+                                Collections.sort(adapter.answers, new Comparator<Answer>() {
+                                    @Override
+                                    public int compare(Answer o1, Answer o2) {
+                                        return  (o1.getId() < o2.getId())?1:-1;
+                                    }
+                                });
+
                                 adapter.notifyDataSetChanged();
                             } else {
                                 answerList.setVisibility(View.GONE);
