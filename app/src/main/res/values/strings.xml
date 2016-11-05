@@ -135,7 +135,7 @@
     <string name="title_activity_write_post">WritePostActivity</string>
 
     <!-- Fetch/Input URL's -->
-    <string name="fetch_hostname" translatable="false">https://mathpp.emilio.pedrollo.nom.br/app_dev.php</string>
+    <string name="fetch_hostname" translatable="false">https://mathpp.emilio.pedrollo.nom.br</string>
 
     <string name="categories_fetch_uri" translatable="false">/categories</string>
     <string name="category_fetch_uri" translatable="false">/category/%1$s</string>
