@@ -345,22 +345,24 @@ public class MainActivity extends AppCompatActivity
         // Handle action bar item clicks here. The action bar will
         // automatically handle clicks on the Home/Up button, so long
         // as you specify a parent activity in AndroidManifest.xml.
+        Intent intent;
         int id = item.getItemId();
 
-        //noinspection SimplifiableIfStatement
-        if (id == R.id.action_settings) {
-            Intent intent = new Intent(getApplicationContext(),SettingsActivity.class);
-            ActivityCompat.startActivity(this,intent,null);
-            return true;
-        } else if (id == R.id.action_refresh_categories) {
-            refreshCategoriesGrid();
-//        } else if (id == R.id.action_add_question) {
-//            Intent intent = new Intent(getApplicationContext(),WritePostActivity.class);
-//            ActivityCompat.startActivity(this,intent,null);
-//            return true;
+        switch (id){
+//            case R.id.action_settings:
+//                intent = new Intent(getApplicationContext(),SettingsActivity.class);
+//                ActivityCompat.startActivity(this,intent,null);
+//                return true;
+            case R.id.action_refresh_categories:
+                refreshCategoriesGrid();
+                return true;
+//            case R.id.action_add_question:
+//                intent = new Intent(getApplicationContext(),WritePostActivity.class);
+//                ActivityCompat.startActivity(this,intent,null);
+//                return true;
+            default:
+                return super.onOptionsItemSelected(item);
         }
-
-        return super.onOptionsItemSelected(item);
     }
 
     @SuppressLint("SetJavaScriptEnabled")
