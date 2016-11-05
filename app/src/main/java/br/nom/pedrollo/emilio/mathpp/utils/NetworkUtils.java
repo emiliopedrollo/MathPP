@@ -1,6 +1,8 @@
 package br.nom.pedrollo.emilio.mathpp.utils;
 
 import android.content.Context;
+import android.content.SharedPreferences;
+import android.preference.PreferenceManager;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import android.text.TextUtils;
@@ -27,6 +29,7 @@ import java.util.Map;
 import java.util.Random;
 
 
+import br.nom.pedrollo.emilio.mathpp.BuildConfig;
 import br.nom.pedrollo.emilio.mathpp.R;
 
 
@@ -111,12 +114,20 @@ public class NetworkUtils {
     public static String getFromServer(Context context, String uri, Method method,
                                        HashMap<String, String> params){
 
+        SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(context);
+        Boolean xdebug = prefs.getBoolean(context.getString(R.string.pref_key_enable_dev_server),false);
+
         try {
             InputStream is = null;
             OutputStreamWriter osw;
+            String host;
             URL url;
 
-            String host = context.getResources().getString(R.string.fetch_hostname);
+            if (xdebug){
+                host = context.getResources().getString(R.string.fetch_hostname_debug);
+            } else{
+                host = context.getResources().getString(R.string.fetch_hostname);
+            }
 
             try {
                 if (method == Method.GET && params.size() > 0) {
@@ -127,7 +138,7 @@ public class NetworkUtils {
                 HttpURLConnection conn = (HttpURLConnection) url.openConnection();
                 assert conn != null;
 
-                if (false) {
+                if (xdebug) {
                     final String COOKIES_HEADER = "Set-Cookie";
                     java.net.CookieManager cookieManager = new java.net.CookieManager();
                     cookieManager.getCookieStore().add(null, new HttpCookie("XDEBUG_SESSION", "PHPSTORM"));
@@ -218,13 +229,13 @@ public class NetworkUtils {
     }
 
     private final static char[] MULTIPART_CHARS =
-            "-_1234567890abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ"
+            "1234567890abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ"
                     .toCharArray();
 
     public static String generateBoundary() {
         StringBuilder buffer = new StringBuilder();
         Random rand = new Random();
-        int count = rand.nextInt(11) + 30; // a random size from 30 to 40
+        int count = rand.nextInt(11) + 20; // a random size from 20 to 30
         for (int i = 0; i < count; i++) {
             buffer.append(MULTIPART_CHARS[rand.nextInt(MULTIPART_CHARS.length)]);
         }
