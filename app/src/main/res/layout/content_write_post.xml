@@ -15,22 +15,30 @@
     tools:showIn="@layout/activity_write_post">
 
     <EditText
-        android:id="@+id/question_title"
+        android:id="@+id/post_title"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:background="@android:color/transparent"
         android:inputType="textCapSentences|textAutoCorrect|text"
         android:hint="@string/write_post_title_hint"
         android:textStyle="bold" />
-    <EditText
-        android:id="@+id/post_text"
+    <LinearLayout
+        android:id="@+id/post_body"
         android:layout_width="match_parent"
         android:layout_height="0dp"
         android:layout_weight="1"
-        android:background="@android:color/transparent"
-        android:gravity="top|start"
-        android:inputType="textCapSentences|textAutoCorrect|text"
-        android:hint="@string/white_question_body_hint"
-        android:paddingTop="8dp" />
+        android:orientation="vertical">
+
+        <EditText
+            android:id="@+id/post_text"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:background="@android:color/transparent"
+            android:gravity="top|start"
+            android:inputType="textCapSentences|textAutoCorrect|text"
+            android:hint="@string/white_question_body_hint"
+            android:paddingTop="8dp" />
+
+    </LinearLayout>
 
 </LinearLayout>

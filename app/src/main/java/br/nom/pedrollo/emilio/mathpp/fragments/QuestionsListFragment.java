@@ -317,7 +317,7 @@ public class QuestionsListFragment extends Fragment implements SwipeRefreshLayou
                     @Override
                     public boolean onLongClick(View v) {
                         Toast.makeText(v.getContext(),
-                                ((TextView) v.findViewById(R.id.question_title)).getText(),
+                                ((TextView) v.findViewById(R.id.post_title)).getText(),
                                 Toast.LENGTH_SHORT).show();
                         return true;
                     }
@@ -354,7 +354,7 @@ public class QuestionsListFragment extends Fragment implements SwipeRefreshLayou
 
                     //Pair.create(view.findViewById(R.id.question_item_scene_root),"content_area"),
                     Pair.create(view.findViewById(R.id.question_header),"question_header"),
-                    Pair.create(view.findViewById(R.id.question_title),"question_title"),
+                    Pair.create(view.findViewById(R.id.post_title),"question_title"),
                     Pair.create(view.findViewById(R.id.question_author),"question_author"),
                     Pair.create(view.findViewById(R.id.question_star),"question_star"),
                     Pair.create(view.findViewById(R.id.answer_item_score),"question_answer_number"),

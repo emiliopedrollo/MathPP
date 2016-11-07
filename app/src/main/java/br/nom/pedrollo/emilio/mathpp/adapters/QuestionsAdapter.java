@@ -37,7 +37,7 @@ public class QuestionsAdapter extends RecyclerView.Adapter<QuestionsAdapter.View
             super(itemView);
             questionListItem = (FrameLayout) itemView;
 
-            questionTitle = (TextView) questionListItem.findViewById(R.id.question_title);
+            questionTitle = (TextView) questionListItem.findViewById(R.id.post_title);
             numAnswers = (TextView) questionListItem.findViewById(R.id.answer_item_score);
             questionAuthor = (TextView) questionListItem.findViewById(R.id.question_author);
 

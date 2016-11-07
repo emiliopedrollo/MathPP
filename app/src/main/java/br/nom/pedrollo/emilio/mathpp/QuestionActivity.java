@@ -478,7 +478,7 @@ public class QuestionActivity extends AppCompatActivity {
 
     private void handleIntent(Intent intent){
         TextView questionAuthor = (TextView) findViewById(R.id.question_author);
-        TextView questionTitle = (TextView) findViewById(R.id.question_title);
+        TextView questionTitle = (TextView) findViewById(R.id.post_title);
         TextView questionAnswerNumber = (TextView) findViewById(R.id.answer_item_score);
 
         questionId = intent.getIntExtra(MESSAGE_QUESTION_ID,-1);

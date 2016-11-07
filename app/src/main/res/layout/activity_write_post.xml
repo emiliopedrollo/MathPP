@@ -41,7 +41,7 @@
             >
 
             <com.getbase.floatingactionbutton.FloatingActionButton
-                android:id="@+id/fab_event"
+                android:id="@+id/fab_add_tex"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 app:fab_colorNormal="@color/colorAccent"
@@ -52,7 +52,7 @@
                 app:fab_title="Formula" />
 
             <com.getbase.floatingactionbutton.FloatingActionButton
-                android:id="@+id/fab_photo"
+                android:id="@+id/fab_add_image"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 app:fab_colorNormal="@color/colorAccent"
@@ -63,7 +63,7 @@
                 app:fab_title="Image" />
 
             <com.getbase.floatingactionbutton.FloatingActionButton
-                android:id="@+id/fab_others"
+                android:id="@+id/fab_add_text"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 app:fab_colorNormal="@color/colorAccent"
