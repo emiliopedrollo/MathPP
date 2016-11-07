@@ -36,8 +36,8 @@ public class WritePostActivity extends AppCompatActivity {
     public final static String POST_TYPE_QUESTION = "QUESTION";
     public final static String POST_TYPE_ANSWER = "ANSWER";
 
-    public final static int POST_RESULT_SUCCESSFUL = 0;
-    public final static int POST_RESULT_CANCELED = 1;
+    public final static int POST_RESULT_CANCELED = 0;
+    public final static int POST_RESULT_SUCCESSFUL = 1;
     public final static int POST_RESULT_FAILED = 2;
 
     public final static String POST_NEW_ID = "NEW_ID";
