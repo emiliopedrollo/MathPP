@@ -1,22 +1,37 @@
 package br.nom.pedrollo.emilio.mathpp;
 
+import android.Manifest;
+import android.app.Activity;
 import android.app.ProgressDialog;
 import android.content.Context;
+import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.SharedPreferences;
+import android.content.pm.PackageManager;
 import android.net.ConnectivityManager;
 import android.net.NetworkInfo;
+import android.net.Uri;
 import android.os.AsyncTask;
 import android.os.Bundle;
 import android.preference.PreferenceManager;
+import android.provider.MediaStore;
 import android.provider.Settings;
+import android.support.v4.app.ActivityCompat;
+import android.support.v4.content.ContextCompat;
+import android.support.v7.app.AlertDialog;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
 import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
+import android.view.View;
 import android.widget.EditText;
+import android.widget.ImageView;
+import android.widget.LinearLayout;
 import android.widget.Toast;
+
+import com.getbase.floatingactionbutton.FloatingActionButton;
+import com.getbase.floatingactionbutton.FloatingActionsMenu;
 
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -40,15 +55,24 @@ public class WritePostActivity extends AppCompatActivity {
     public final static int POST_RESULT_SUCCESSFUL = 1;
     public final static int POST_RESULT_FAILED = 2;
 
+    private final int RESULT_CODE_CAMERA = 1;
+    private final int RESULT_CODE_GALLERY = 2;
+
+    private final int GRANT_REQUEST_READ_EXTERNAL_STORAGE_FOR_IMAGE = 1;
+
     public final static String POST_NEW_ID = "NEW_ID";
 
     private ProgressDialog progress;
+
+    Activity activity;
 
     int categoryId;
     int questionId;
     String postType;
 
     Intent returnIntent;
+
+    LinearLayout postBody;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -75,6 +99,53 @@ public class WritePostActivity extends AppCompatActivity {
         returnIntent = new Intent();
 
         setupHints();
+
+        activity = this;
+
+        final FloatingActionsMenu fam = (FloatingActionsMenu) findViewById(R.id.fab_menu);
+
+
+        final FloatingActionButton fab_add_text = (FloatingActionButton) findViewById(R.id.fab_add_text);
+        fab_add_text.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                Toast.makeText(activity,R.string.not_available_yet,Toast.LENGTH_SHORT).show();
+                fam.collapse();
+            }
+        });
+
+        FloatingActionButton fab_add_tex = (FloatingActionButton) findViewById(R.id.fab_add_tex);
+        fab_add_tex.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                Toast.makeText(activity,R.string.not_available_yet,Toast.LENGTH_SHORT).show();
+                fam.collapse();
+            }
+        });
+
+        FloatingActionButton fab_add_image = (FloatingActionButton) findViewById(R.id.fab_add_image);
+        fab_add_image.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+
+                if (ContextCompat.checkSelfPermission(activity,
+                        Manifest.permission.READ_EXTERNAL_STORAGE)
+                        == PackageManager.PERMISSION_GRANTED) {
+                    userLoadImage();
+                } else {
+
+                        ActivityCompat.requestPermissions(activity,
+                                new String[]{Manifest.permission.READ_EXTERNAL_STORAGE},
+                                GRANT_REQUEST_READ_EXTERNAL_STORAGE_FOR_IMAGE);
+
+                }
+
+
+                fam.collapse();
+            }
+        });
+
+        postBody = (LinearLayout) findViewById(R.id.post_body);
 
 //        FloatingActionButton fab = (FloatingActionButton) findViewById(R.id.fab);
 //        fab.setOnClickListener(new View.OnClickListener() {
@@ -107,6 +178,78 @@ public class WritePostActivity extends AppCompatActivity {
 //                frameLayout.setOnTouchListener(null);
 //            }
 //        });
+    }
+
+    @Override
+    public void onRequestPermissionsResult(int requestCode,
+                                           String permissions[], int[] grantResults) {
+        switch (requestCode) {
+            case GRANT_REQUEST_READ_EXTERNAL_STORAGE_FOR_IMAGE:
+                // If request is cancelled, the result arrays are empty.
+                if (grantResults.length > 0
+                        && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+
+                    userLoadImage();
+
+                }
+                break;
+        }
+    }
+
+    private void userLoadImage(){
+        AlertDialog.Builder builder = new AlertDialog.Builder(activity);
+        builder.setTitle(R.string.pick_source)
+                .setItems(R.array.image_sources, new DialogInterface.OnClickListener() {
+                    public void onClick(DialogInterface dialog, int which) {
+                        switch (which){
+                            case 0:
+                                Intent takePicture = new Intent(MediaStore.ACTION_IMAGE_CAPTURE);
+                                startActivityForResult(takePicture, RESULT_CODE_CAMERA);
+                                break;
+                            case 1:
+                                Intent pickPhoto = new Intent(Intent.ACTION_PICK,
+                                        android.provider.MediaStore.Images.Media.EXTERNAL_CONTENT_URI);
+                                startActivityForResult(pickPhoto , RESULT_CODE_GALLERY);
+                                break;
+                        }
+                    }
+                });
+
+        builder.create().show();
+    }
+
+    protected void onActivityResult(int requestCode, int resultCode, Intent imageReturnedIntent) {
+        super.onActivityResult(requestCode, resultCode, imageReturnedIntent);
+        switch(requestCode) {
+            case RESULT_CODE_CAMERA:
+            case RESULT_CODE_GALLERY:
+                if(resultCode == RESULT_OK){
+
+                    Uri image = imageReturnedIntent.getData();
+
+                    float scale = getResources().getDisplayMetrics().density;
+
+                    ImageView imageView = new ImageView(getBaseContext());
+
+                    imageView.setLayoutParams(new LinearLayout.LayoutParams(
+                            LinearLayout.LayoutParams.MATCH_PARENT,
+                            LinearLayout.LayoutParams.WRAP_CONTENT));
+
+
+                    int padding = (int) (8*scale + 0.5f);
+                    imageView.setPadding(padding,padding,padding,padding);
+                    imageView.setAdjustViewBounds(true);
+
+                    postBody.addView(imageView);
+
+                    imageView.setImageURI(Uri.parse(image.toString()));
+                    imageView.setImageURI(image);
+
+                    imageView.invalidate();
+                }
+
+                break;
+        }
     }
 
     private void setupHints(){
@@ -177,7 +320,7 @@ public class WritePostActivity extends AppCompatActivity {
 
         if (networkInfo != null && networkInfo.isConnected()) {
 
-            EditText titleEdit = (EditText) findViewById(R.id.question_title);
+            EditText titleEdit = (EditText) findViewById(R.id.post_title);
             EditText textEdit = (EditText) findViewById(R.id.post_text);
 
             if (titleEdit.getText().toString().isEmpty()) {
