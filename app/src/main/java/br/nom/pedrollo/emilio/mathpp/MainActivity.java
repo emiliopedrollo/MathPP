@@ -377,6 +377,7 @@ public class MainActivity extends AppCompatActivity
             switch (id){
                 case R.id.nav_categories:
                     return true;
+                case R.id.nav_my_messages:
                 case R.id.nav_favorites:
                     Toast.makeText(this, getResources().getString(R.string.not_available_yet), Toast.LENGTH_SHORT).show();
                     break;

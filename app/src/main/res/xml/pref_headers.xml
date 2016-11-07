@@ -4,12 +4,12 @@
 
     <header
         android:fragment="br.nom.pedrollo.emilio.mathpp.SettingsActivity$GeneralPreferenceFragment"
-        android:icon="@drawable/ic_info_black_24dp"
+        android:icon="@drawable/ic_account_circle"
         android:title="@string/pref_header_general" />
 
     <header
         android:fragment="br.nom.pedrollo.emilio.mathpp.SettingsActivity$AdvancedPreferenceFragment"
-        android:icon="@drawable/ic_priority_high_black_24dp"
+        android:icon="@drawable/ic_flask_outline"
         android:title="@string/pref_header_advanced" />
 
     <!--<header-->

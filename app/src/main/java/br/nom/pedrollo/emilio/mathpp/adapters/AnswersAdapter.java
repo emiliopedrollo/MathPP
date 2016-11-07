@@ -83,19 +83,19 @@ public class AnswersAdapter extends RecyclerView.Adapter<AnswersAdapter.ViewHold
             case "student":
                 holder.answerAuthor.setCompoundDrawablesWithIntrinsicBounds(
                         ContextCompat.getDrawable(
-                                holder.itemView.getContext(),R.drawable.ic_person_outline_black_24dp),
+                                holder.itemView.getContext(),R.drawable.ic_account_outline),
                         null,null,null);
                 break;
             case "monitor":
                 holder.answerAuthor.setCompoundDrawablesWithIntrinsicBounds(
                         ContextCompat.getDrawable(
-                                holder.itemView.getContext(),R.drawable.ic_person_black_24dp),
+                                holder.itemView.getContext(),R.drawable.ic_account),
                         null,null,null);
                 break;
             case "teacher":
                 holder.answerAuthor.setCompoundDrawablesWithIntrinsicBounds(
                         ContextCompat.getDrawable(
-                                holder.itemView.getContext(),R.drawable.ic_school_black_24dp),
+                                holder.itemView.getContext(),R.drawable.ic_school),
                         null,null,null);
                 break;
         }

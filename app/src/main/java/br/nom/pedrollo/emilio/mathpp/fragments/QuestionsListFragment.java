@@ -440,7 +440,7 @@ public class QuestionsListFragment extends Fragment implements SwipeRefreshLayou
         };
         simpleItemTouchCallback
                 .setSwipeBackground(Color.argb(255,244,67,54))
-                .setSwipeIcon(BitmapFactory.decodeResource(getResources(),R.drawable.ic_block_black_24dp))
+                .setSwipeIcon(BitmapFactory.decodeResource(getResources(),R.drawable.ic_close))
                 .setIconTint(Color.WHITE);
         ItemTouchHelper itemTouchHelper = new ItemTouchHelper(simpleItemTouchCallback);
         itemTouchHelper.attachToRecyclerView(questionsList);

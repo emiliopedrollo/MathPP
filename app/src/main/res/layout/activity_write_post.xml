@@ -46,10 +46,10 @@
                 android:layout_height="wrap_content"
                 app:fab_colorNormal="@color/colorAccent"
                 app:fab_colorPressed="@color/colorAccentDark"
-                app:fab_icon="@drawable/ic_add_black_36dp"
+                app:fab_icon="@drawable/ic_sigma"
                 app:fab_plusIconColor="@android:color/white"
                 app:fab_size="mini"
-                app:fab_title="Events" />
+                app:fab_title="Formula" />
 
             <com.getbase.floatingactionbutton.FloatingActionButton
                 android:id="@+id/fab_photo"
@@ -57,10 +57,10 @@
                 android:layout_height="wrap_content"
                 app:fab_colorNormal="@color/colorAccent"
                 app:fab_colorPressed="@color/colorAccentDark"
-                app:fab_icon="@drawable/ic_add_black_36dp"
+                app:fab_icon="@drawable/ic_image"
                 app:fab_plusIconColor="@android:color/white"
                 app:fab_size="mini"
-                app:fab_title="Photographs" />
+                app:fab_title="Image" />
 
             <com.getbase.floatingactionbutton.FloatingActionButton
                 android:id="@+id/fab_others"
@@ -68,10 +68,10 @@
                 android:layout_height="wrap_content"
                 app:fab_colorNormal="@color/colorAccent"
                 app:fab_colorPressed="@color/colorAccentDark"
-                app:fab_icon="@drawable/ic_add_black_36dp"
+                app:fab_icon="@drawable/ic_format_text"
                 app:fab_plusIconColor="@android:color/white"
                 app:fab_size="mini"
-                app:fab_title="Others" />
+                app:fab_title="Text" />
 
         </com.getbase.floatingactionbutton.FloatingActionsMenu>
 

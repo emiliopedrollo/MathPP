@@ -163,5 +163,6 @@
     <string name="empty_answer_body">Please enter answer…</string>
     <string name="pref_key_enable_dev_server">advanced_enable_dev_server</string>
     <string name="report_issue">Report Issue</string>
+    <string name="nav_my_questions">My Questions</string>
 
 </resources>

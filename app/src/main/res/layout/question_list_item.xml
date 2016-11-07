@@ -34,8 +34,8 @@
                     android:layout_height="wrap_content"
                     android:layout_gravity="center"
                     android:drawablePadding="4dp"
-                    android:drawableStart="@drawable/ic_person_outline_black_24dp"
-                    android:drawableLeft="@drawable/ic_person_outline_black_24dp"
+                    android:drawableStart="@drawable/ic_account_outline"
+                    android:drawableLeft="@drawable/ic_account_outline"
                     android:text="@string/user_asked"
                     android:textSize="14sp" />
 

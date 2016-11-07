@@ -490,19 +490,19 @@ public class QuestionActivity extends AppCompatActivity {
             case "student":
                 questionAuthor.setCompoundDrawablesWithIntrinsicBounds(
                         ContextCompat.getDrawable(
-                                getBaseContext(),R.drawable.ic_person_outline_black_24dp),
+                                getBaseContext(),R.drawable.ic_account_outline),
                         null,null,null);
                 break;
             case "monitor":
                 questionAuthor.setCompoundDrawablesWithIntrinsicBounds(
                         ContextCompat.getDrawable(
-                                getBaseContext(),R.drawable.ic_person_black_24dp),
+                                getBaseContext(),R.drawable.ic_account),
                         null,null,null);
                 break;
             case "teacher":
                 questionAuthor.setCompoundDrawablesWithIntrinsicBounds(
                         ContextCompat.getDrawable(
-                                getBaseContext(),R.drawable.ic_school_black_24dp),
+                                getBaseContext(),R.drawable.ic_school),
                         null,null,null);
                 break;
         }

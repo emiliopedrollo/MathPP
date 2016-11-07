@@ -6,32 +6,36 @@
         android:checkableBehavior="single">
         <item
             android:id="@+id/nav_categories"
-            android:icon="@drawable/ic_table_black_24dp"
+            android:icon="@drawable/ic_view_grid"
             android:checked="true"
             android:title="@string/nav_categories" />
         <item
+            android:id="@+id/nav_my_messages"
+            android:icon="@drawable/ic_message_text"
+            android:title="@string/nav_my_questions" />
+        <item
             android:id="@+id/nav_favorites"
-            android:icon="@drawable/ic_star_black_24dp"
+            android:icon="@drawable/ic_star"
             android:title="@string/nav_favorites" />
     </group>
 
     <group android:id="@+id/main_drawer_group2">
         <item
             android:id="@+id/nav_settings"
-            android:icon="@drawable/ic_settings_black_24dp"
+            android:icon="@drawable/ic_settings"
             android:title="@string/action_settings" />
         <item
             android:id="@+id/nav_report"
-            android:icon="@drawable/ic_bug_report_black_24dp"
+            android:icon="@drawable/ic_bug"
             android:title="@string/report_issue" />
 
         <item
             android:id="@+id/nav_info"
-            android:icon="@drawable/ic_info_black_24dp"
+            android:icon="@drawable/ic_information"
             android:title="@string/nav_info" />
         <item
             android:id="@+id/nav_exit"
-            android:icon="@drawable/ic_exit_to_app_black_24dp"
+            android:icon="@drawable/ic_exit"
             android:title="@string/nav_exit" />
     </group>
 
