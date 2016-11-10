@@ -8,16 +8,21 @@ import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
+import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
 import android.net.ConnectivityManager;
 import android.net.NetworkInfo;
 import android.net.Uri;
 import android.os.AsyncTask;
+import android.os.Build;
 import android.os.Bundle;
+import android.os.Environment;
 import android.preference.PreferenceManager;
 import android.provider.MediaStore;
 import android.provider.Settings;
 import android.support.v4.app.ActivityCompat;
 import android.support.v4.content.ContextCompat;
+import android.support.v4.content.FileProvider;
 import android.support.v7.app.AlertDialog;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
@@ -32,10 +37,16 @@ import android.widget.Toast;
 
 import com.getbase.floatingactionbutton.FloatingActionButton;
 import com.getbase.floatingactionbutton.FloatingActionsMenu;
+import com.squareup.picasso.Picasso;
 
 import org.json.JSONException;
 import org.json.JSONObject;
 
+import java.io.File;
+import java.io.IOException;
+import java.net.URI;
+import java.text.SimpleDateFormat;
+import java.util.Date;
 import java.util.HashMap;
 
 import br.nom.pedrollo.emilio.mathpp.entities.Answer;
@@ -73,6 +84,9 @@ public class WritePostActivity extends AppCompatActivity {
     Intent returnIntent;
 
     LinearLayout postBody;
+
+    String imageFile;
+    File image;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -180,6 +194,31 @@ public class WritePostActivity extends AppCompatActivity {
 //        });
     }
 
+    private File createImageFile() throws IOException {
+        // Create an image file name
+        String timeStamp;
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
+            timeStamp = new SimpleDateFormat("yyyyMMdd_HHmmss",getResources().getConfiguration().getLocales().get(0)).format(new Date());
+        } else {
+            timeStamp = new SimpleDateFormat("yyyyMMdd_HHmmss",getResources().getConfiguration().locale).format(new Date());
+        }
+        String imageFileName = "JPEG_" + timeStamp + "_";
+        File storageDir = getExternalFilesDir("Pictures");
+
+        // Save a file: path for use with ACTION_VIEW intents
+        // mCurrentPhotoPath = "file:" + image.getAbsolutePath();
+        File file = File.createTempFile(
+                imageFileName,  /* prefix */
+                ".jpg",         /* suffix */
+                storageDir      /* directory */
+        );
+        imageFile = "file:"+file.getAbsolutePath();
+        image = file;
+
+
+        return file;
+    }
+
     @Override
     public void onRequestPermissionsResult(int requestCode,
                                            String permissions[], int[] grantResults) {
@@ -203,8 +242,30 @@ public class WritePostActivity extends AppCompatActivity {
                     public void onClick(DialogInterface dialog, int which) {
                         switch (which){
                             case 0:
-                                Intent takePicture = new Intent(MediaStore.ACTION_IMAGE_CAPTURE);
-                                startActivityForResult(takePicture, RESULT_CODE_CAMERA);
+                                Intent takePictureIntent = new Intent(MediaStore.ACTION_IMAGE_CAPTURE);
+
+                                if (takePictureIntent.resolveActivity(getPackageManager()) != null) {
+                                    // Create the File where the photo should go
+                                    File photoFile = null;
+                                    try {
+                                        photoFile = createImageFile();
+                                    } catch (IOException e) {
+                                        Log.e("POST_WRITER",e.getMessage());
+                                    }
+                                    // Continue only if the File was successfully created
+                                    if (photoFile != null) {
+                                        //Uri photoURI = FileProvider.getUriForFile(getApplicationContext(),
+                                        //        getApplicationContext().getPackageName()+".fileprovider",photoFile);
+
+                                        //File photoURI = new File(Environment.getExternalStorageDirectory(), "temp.jpg");
+
+
+                                        takePictureIntent.putExtra(MediaStore.EXTRA_OUTPUT, Uri.fromFile(photoFile));
+                                        startActivityForResult(takePictureIntent, RESULT_CODE_CAMERA);
+                                    }
+                                }
+
+                                //startActivityForResult(takePicture, RESULT_CODE_CAMERA);
                                 break;
                             case 1:
                                 Intent pickPhoto = new Intent(Intent.ACTION_PICK,
@@ -218,14 +279,18 @@ public class WritePostActivity extends AppCompatActivity {
         builder.create().show();
     }
 
-    protected void onActivityResult(int requestCode, int resultCode, Intent imageReturnedIntent) {
-        super.onActivityResult(requestCode, resultCode, imageReturnedIntent);
+    protected void onActivityResult(int requestCode, int resultCode, Intent data) {
+        super.onActivityResult(requestCode, resultCode, data);
         switch(requestCode) {
             case RESULT_CODE_CAMERA:
+//                if(resultCode == RESULT_OK) {
+//                    Bundle extras = data.getExtras();
+//                    Bitmap imageBitmap = BitmapFactory.decodeFile(imageFile);
+//                    //mImageView.setImageBitmap(imageBitmap);
+//                }
+//                break;
             case RESULT_CODE_GALLERY:
                 if(resultCode == RESULT_OK){
-
-                    Uri image = imageReturnedIntent.getData();
 
                     float scale = getResources().getDisplayMetrics().density;
 
@@ -242,14 +307,33 @@ public class WritePostActivity extends AppCompatActivity {
 
                     postBody.addView(imageView);
 
-                    imageView.setImageURI(Uri.parse(image.toString()));
-                    imageView.setImageURI(image);
 
-                    imageView.invalidate();
+                    if (requestCode == RESULT_CODE_GALLERY){
+                        Uri imageFromGallery = data.getData();
+//                        try{
+
+                            //imageView.setImageBitmap(MediaStore.Images.Media.getBitmap(this.getContentResolver(), imageFromGallery));
+                        Picasso.with(this).load(imageFromGallery).resize(1024,0).into(imageView);
+//                        } catch (IOException e) {
+//                            Log.e("READ_IMAGE_ERROR",e.getMessage());
+//                        }
+                        //imageView.setImageURI(Uri.parse(imageFile));
+
+                    } else {
+
+                        Picasso.with(this).load(image).into(imageView);
+
+                        imageView.setImageURI(Uri.parse(imageFile));
+                        imageView.setImageURI(Uri.fromFile(image));
+                    }
                 }
 
                 break;
         }
+    }
+
+    private void createImagePart(){
+
     }
 
     private void setupHints(){
