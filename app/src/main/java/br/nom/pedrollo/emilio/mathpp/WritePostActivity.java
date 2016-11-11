@@ -23,6 +23,7 @@ import android.provider.Settings;
 import android.support.v4.app.ActivityCompat;
 import android.support.v4.content.ContextCompat;
 import android.support.v4.content.FileProvider;
+import android.support.v4.view.ScrollingView;
 import android.support.v7.app.AlertDialog;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
@@ -33,6 +34,7 @@ import android.view.View;
 import android.widget.EditText;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
+import android.widget.ScrollView;
 import android.widget.Toast;
 
 import com.getbase.floatingactionbutton.FloatingActionButton;
@@ -88,7 +90,6 @@ public class WritePostActivity extends AppCompatActivity {
     LinearLayout postBody;
 
     String imageFile;
-    File image;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -159,6 +160,21 @@ public class WritePostActivity extends AppCompatActivity {
         });
 
         postBody = (LinearLayout) findViewById(R.id.post_body);
+
+        LinearLayout linearLayout = (LinearLayout) findViewById(R.id.content_write_post);
+        linearLayout.setClickable(true);
+        linearLayout.setFocusable(true);
+        linearLayout.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                int childNumber = postBody.getChildCount();
+                View lastView = postBody.getChildAt(childNumber-1);
+                lastView.requestFocus();
+                if (lastView instanceof EditText){
+                    ((EditText)lastView).setSelection(((EditText)lastView).getText().length());
+                }
+            }
+        });
 
 //        FloatingActionButton fab = (FloatingActionButton) findViewById(R.id.fab);
 //        fab.setOnClickListener(new View.OnClickListener() {

@@ -3,6 +3,7 @@
     xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/scroll_view_write_post"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:paddingBottom="@dimen/activity_vertical_margin"
@@ -11,6 +12,7 @@
     android:paddingTop="@dimen/activity_vertical_margin"
     android:clipToPadding="false"
     android:scrollbarStyle="outsideOverlay"
+    android:fillViewport="true"
     app:layout_behavior="@string/appbar_scrolling_view_behavior"
     tools:context="br.nom.pedrollo.emilio.mathpp.WritePostActivity"
     tools:showIn="@layout/activity_write_post">
@@ -18,7 +20,7 @@
         <LinearLayout
             android:id="@+id/content_write_post"
             android:layout_width="match_parent"
-            android:layout_height="match_parent"
+            android:layout_height="wrap_content"
             android:orientation="vertical">
 
             <EditText
@@ -28,6 +30,7 @@
                 android:background="@android:color/transparent"
                 android:inputType="textCapSentences|textAutoCorrect|text"
                 android:hint="@string/write_post_title_hint"
+                android:maxLines="1"
                 android:textStyle="bold" />
             <LinearLayout
                 android:id="@+id/post_body"
@@ -41,8 +44,9 @@
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:background="@android:color/transparent"
+                    android:inputType="textCapSentences|textAutoCorrect|textMultiLine|text"
+                    android:paddingBottom="4dp"
                     android:gravity="top|start"
-                    android:inputType="textCapSentences|textAutoCorrect|text"
                     android:hint="@string/white_question_body_hint"
                     android:paddingTop="8dp" />
 
