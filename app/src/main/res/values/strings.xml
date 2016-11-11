@@ -166,6 +166,9 @@
     <string name="nav_my_questions">My Questions</string>
     <string name="pick_source">Choose a source</string>
     <string name="intent_select_image">Select an image file</string>
+    <string name="delete_image">Delete Image</string>
+    <string name="yes">Yes</string>
+    <string name="cancel">Cancel</string>
 
     <string-array name="image_sources">
         <item>Camera</item>

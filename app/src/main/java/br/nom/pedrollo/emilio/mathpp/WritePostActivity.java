@@ -10,6 +10,8 @@ import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
+import android.graphics.drawable.BitmapDrawable;
+import android.graphics.drawable.Drawable;
 import android.net.ConnectivityManager;
 import android.net.NetworkInfo;
 import android.net.Uri;
@@ -26,6 +28,7 @@ import android.support.v4.content.FileProvider;
 import android.support.v4.view.ScrollingView;
 import android.support.v7.app.AlertDialog;
 import android.support.v7.app.AppCompatActivity;
+import android.support.v7.widget.DrawableUtils;
 import android.support.v7.widget.Toolbar;
 import android.util.Log;
 import android.view.Menu;
@@ -57,6 +60,8 @@ import br.nom.pedrollo.emilio.mathpp.entities.Answer;
 import br.nom.pedrollo.emilio.mathpp.entities.Question;
 import br.nom.pedrollo.emilio.mathpp.utils.NetworkUtils;
 
+// FIXME: arrumar redimensionamento de imagem quando ela não cabe no Layout (por causa do teclado)
+
 public class WritePostActivity extends AppCompatActivity {
 
     public final static String INTENT_KEY_CATEGORY = "CATEGORY";
@@ -80,6 +85,11 @@ public class WritePostActivity extends AppCompatActivity {
     private ProgressDialog progress;
 
     Activity activity;
+
+    FloatingActionsMenu fam;
+    FloatingActionButton fab_add_text;
+    FloatingActionButton fab_add_image;
+    FloatingActionButton fab_add_tex;
 
     int categoryId;
     int questionId;
@@ -119,10 +129,9 @@ public class WritePostActivity extends AppCompatActivity {
 
         activity = this;
 
-        final FloatingActionsMenu fam = (FloatingActionsMenu) findViewById(R.id.fab_menu);
+        fam = (FloatingActionsMenu) findViewById(R.id.fab_menu);
 
-
-        final FloatingActionButton fab_add_text = (FloatingActionButton) findViewById(R.id.fab_add_text);
+        fab_add_text = (FloatingActionButton) findViewById(R.id.fab_add_text);
         fab_add_text.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
@@ -131,7 +140,7 @@ public class WritePostActivity extends AppCompatActivity {
             }
         });
 
-        FloatingActionButton fab_add_tex = (FloatingActionButton) findViewById(R.id.fab_add_tex);
+        fab_add_tex = (FloatingActionButton) findViewById(R.id.fab_add_tex);
         fab_add_tex.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
@@ -140,7 +149,7 @@ public class WritePostActivity extends AppCompatActivity {
             }
         });
 
-        FloatingActionButton fab_add_image = (FloatingActionButton) findViewById(R.id.fab_add_image);
+        fab_add_image = (FloatingActionButton) findViewById(R.id.fab_add_image);
         fab_add_image.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
@@ -306,7 +315,7 @@ public class WritePostActivity extends AppCompatActivity {
 
                     Uri image;
 
-                    float scale = getResources().getDisplayMetrics().density;
+                    //float scale = getResources().getDisplayMetrics().density;
 
                     final ImageView imageView = new ImageView(getBaseContext());
 
@@ -317,9 +326,34 @@ public class WritePostActivity extends AppCompatActivity {
 
                     //int padding = (int) (8*scale + 0.5f);
                     //imageView.setPadding(padding,padding,padding,padding);
-                    imageView.setAdjustViewBounds(true);
+//                    imageView.setAdjustViewBounds(true);
 
                     postBody.addView(imageView);
+
+                    imageView.setLongClickable(true);
+                    imageView.setOnLongClickListener(new View.OnLongClickListener() {
+                        @Override
+                        public boolean onLongClick(View v) {
+
+                            AlertDialog.Builder builder = new AlertDialog.Builder(activity);
+                            builder.setMessage(R.string.delete_image)
+                                    .setPositiveButton(R.string.yes, new DialogInterface.OnClickListener() {
+                                        public void onClick(DialogInterface dialog, int id) {
+                                            imageView.setVisibility(View.GONE);
+                                            postBody.removeView(imageView);
+                                            showFab(fab_add_image);
+                                        }
+                                    })
+                                    .setNegativeButton(R.string.cancel, new DialogInterface.OnClickListener() {
+                                        public void onClick(DialogInterface dialog, int id) {}
+                                    });
+                            // Create the AlertDialog object and return it
+                            builder.create().show();
+
+                            return true;
+
+                        }
+                    });
 
                     if (requestCode == RESULT_CODE_GALLERY){
                         image = data.getData();
@@ -327,33 +361,69 @@ public class WritePostActivity extends AppCompatActivity {
                         image = Uri.parse(imageFile);
                     }
 
-                    Picasso.with(this).load(image).
-                            memoryPolicy(MemoryPolicy.NO_CACHE,MemoryPolicy.NO_STORE)
-                            .transform(new Transformation() {
-                                @Override
-                                public Bitmap transform(Bitmap source) {
-                                    int targetWidth = imageView.getWidth();
 
-                                    double aspectRatio = (double) source.getHeight() / (double) source.getWidth();
-                                    int targetHeight = (int) (targetWidth * aspectRatio);
-                                    Bitmap result = Bitmap.createScaledBitmap(source, targetWidth, targetHeight, false);
-                                    if (result != source) {
-                                        // Same bitmap is returned if sizes are the same
-                                        source.recycle();
+                    try {
+                        Bitmap bitmap = MediaStore.Images.Media.getBitmap(this.getContentResolver(), image);
+                        Drawable drawable = new BitmapDrawable(getResources(),bitmap);
+
+                        double aspectRatio = (double) drawable.getIntrinsicHeight() / (double) drawable.getIntrinsicWidth();
+                        final int targetWidth = ((LinearLayout)imageView.getParent()).getWidth();
+                        final int targetHeight = (int) (targetWidth * aspectRatio);
+
+                        imageView.setMinimumHeight(targetHeight);
+
+                        Picasso.with(this).load(image).
+                                memoryPolicy(MemoryPolicy.NO_CACHE,MemoryPolicy.NO_STORE)
+                                .transform(new Transformation() {
+                                    @Override
+                                    public Bitmap transform(Bitmap source) {
+
+                                        Bitmap result = Bitmap.createScaledBitmap(source, targetWidth, targetHeight, false);
+                                        if (result != source) {
+                                            source.recycle();
+                                        }
+
+                                        return result;
                                     }
-                                    return result;
-                                }
 
-                                @Override
-                                public String key() {
-                                    return "transformation" + " desiredWidth";
-                                }
-                            })
-                            .into(imageView);
+                                    @Override
+                                    public String key() {
+                                        return "transformation" + " desiredWidth";
+                                    }
+                                })
+                                .into(imageView);
+
+                        hideFab(fab_add_image);
+
+                    } catch (IOException e) {
+                        e.printStackTrace();
+                    }
+
+
                 }
 
                 break;
         }
+    }
+
+    private void showAndHideFam(){
+        if (fab_add_image.getVisibility() == View.GONE &&
+                fab_add_tex.getVisibility() == View.GONE &&
+                fab_add_text.getVisibility() == View.GONE) {
+            fam.setVisibility(View.GONE);
+        } else {
+            fam.setVisibility(View.VISIBLE);
+        }
+    }
+
+    private void showFab(FloatingActionButton fab){
+        fab.setVisibility(View.VISIBLE);
+        showAndHideFam();
+    }
+
+    private void hideFab(FloatingActionButton fab){
+        fab.setVisibility(View.GONE);
+        showAndHideFam();
     }
 
     private void createImagePart(){
