@@ -37,7 +37,9 @@ import android.widget.Toast;
 
 import com.getbase.floatingactionbutton.FloatingActionButton;
 import com.getbase.floatingactionbutton.FloatingActionsMenu;
+import com.squareup.picasso.MemoryPolicy;
 import com.squareup.picasso.Picasso;
+import com.squareup.picasso.Transformation;
 
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -147,14 +149,11 @@ public class WritePostActivity extends AppCompatActivity {
                         == PackageManager.PERMISSION_GRANTED) {
                     userLoadImage();
                 } else {
-
                         ActivityCompat.requestPermissions(activity,
                                 new String[]{Manifest.permission.READ_EXTERNAL_STORAGE},
                                 GRANT_REQUEST_READ_EXTERNAL_STORAGE_FOR_IMAGE);
 
                 }
-
-
                 fam.collapse();
             }
         });
@@ -207,16 +206,15 @@ public class WritePostActivity extends AppCompatActivity {
 
         // Save a file: path for use with ACTION_VIEW intents
         // mCurrentPhotoPath = "file:" + image.getAbsolutePath();
-        File file = File.createTempFile(
+        File image = File.createTempFile(
                 imageFileName,  /* prefix */
                 ".jpg",         /* suffix */
                 storageDir      /* directory */
         );
-        imageFile = "file:"+file.getAbsolutePath();
-        image = file;
+        imageFile = "file:"+image.getAbsolutePath();
+        //image = file;
 
-
-        return file;
+        return image;
     }
 
     @Override
@@ -245,32 +243,36 @@ public class WritePostActivity extends AppCompatActivity {
                                 Intent takePictureIntent = new Intent(MediaStore.ACTION_IMAGE_CAPTURE);
 
                                 if (takePictureIntent.resolveActivity(getPackageManager()) != null) {
-                                    // Create the File where the photo should go
-                                    File photoFile = null;
+                                    File photoFile;
+                                    Uri photoURI;
+
                                     try {
                                         photoFile = createImageFile();
                                     } catch (IOException e) {
                                         Log.e("POST_WRITER",e.getMessage());
+                                        return;
                                     }
-                                    // Continue only if the File was successfully created
-                                    if (photoFile != null) {
-                                        //Uri photoURI = FileProvider.getUriForFile(getApplicationContext(),
-                                        //        getApplicationContext().getPackageName()+".fileprovider",photoFile);
+                                    assert photoFile != null;
 
-                                        //File photoURI = new File(Environment.getExternalStorageDirectory(), "temp.jpg");
-
-
-                                        takePictureIntent.putExtra(MediaStore.EXTRA_OUTPUT, Uri.fromFile(photoFile));
-                                        startActivityForResult(takePictureIntent, RESULT_CODE_CAMERA);
+                                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+                                        photoURI = FileProvider.getUriForFile(getApplicationContext(),
+                                                getApplicationContext().getPackageName()+".fileprovider", photoFile);
+                                    } else {
+                                        photoURI = Uri.fromFile(photoFile);
                                     }
+
+                                    takePictureIntent.putExtra(MediaStore.EXTRA_OUTPUT, photoURI);
+                                    startActivityForResult(takePictureIntent, RESULT_CODE_CAMERA);
                                 }
-
-                                //startActivityForResult(takePicture, RESULT_CODE_CAMERA);
                                 break;
                             case 1:
-                                Intent pickPhoto = new Intent(Intent.ACTION_PICK,
-                                        android.provider.MediaStore.Images.Media.EXTERNAL_CONTENT_URI);
-                                startActivityForResult(pickPhoto , RESULT_CODE_GALLERY);
+                                Intent pickImage = new Intent(Intent.ACTION_GET_CONTENT, null);
+                                pickImage.setType("image/*");
+                                pickImage.addCategory(Intent.CATEGORY_OPENABLE);
+
+//                                Intent pickPhoto = new Intent(Intent.ACTION_PICK,
+//                                        android.provider.MediaStore.Images.Media.EXTERNAL_CONTENT_URI);
+                                startActivityForResult(Intent.createChooser(pickImage,getString(R.string.intent_select_image)) , RESULT_CODE_GALLERY);
                                 break;
                         }
                     }
@@ -283,49 +285,55 @@ public class WritePostActivity extends AppCompatActivity {
         super.onActivityResult(requestCode, resultCode, data);
         switch(requestCode) {
             case RESULT_CODE_CAMERA:
-//                if(resultCode == RESULT_OK) {
-//                    Bundle extras = data.getExtras();
-//                    Bitmap imageBitmap = BitmapFactory.decodeFile(imageFile);
-//                    //mImageView.setImageBitmap(imageBitmap);
-//                }
-//                break;
             case RESULT_CODE_GALLERY:
                 if(resultCode == RESULT_OK){
 
+                    Uri image;
+
                     float scale = getResources().getDisplayMetrics().density;
 
-                    ImageView imageView = new ImageView(getBaseContext());
+                    final ImageView imageView = new ImageView(getBaseContext());
 
                     imageView.setLayoutParams(new LinearLayout.LayoutParams(
                             LinearLayout.LayoutParams.MATCH_PARENT,
                             LinearLayout.LayoutParams.WRAP_CONTENT));
 
 
-                    int padding = (int) (8*scale + 0.5f);
-                    imageView.setPadding(padding,padding,padding,padding);
+                    //int padding = (int) (8*scale + 0.5f);
+                    //imageView.setPadding(padding,padding,padding,padding);
                     imageView.setAdjustViewBounds(true);
 
                     postBody.addView(imageView);
 
-
                     if (requestCode == RESULT_CODE_GALLERY){
-                        Uri imageFromGallery = data.getData();
-//                        try{
-
-                            //imageView.setImageBitmap(MediaStore.Images.Media.getBitmap(this.getContentResolver(), imageFromGallery));
-                        Picasso.with(this).load(imageFromGallery).resize(1024,0).into(imageView);
-//                        } catch (IOException e) {
-//                            Log.e("READ_IMAGE_ERROR",e.getMessage());
-//                        }
-                        //imageView.setImageURI(Uri.parse(imageFile));
-
+                        image = data.getData();
                     } else {
-
-                        Picasso.with(this).load(image).into(imageView);
-
-                        imageView.setImageURI(Uri.parse(imageFile));
-                        imageView.setImageURI(Uri.fromFile(image));
+                        image = Uri.parse(imageFile);
                     }
+
+                    Picasso.with(this).load(image).
+                            memoryPolicy(MemoryPolicy.NO_CACHE,MemoryPolicy.NO_STORE)
+                            .transform(new Transformation() {
+                                @Override
+                                public Bitmap transform(Bitmap source) {
+                                    int targetWidth = imageView.getWidth();
+
+                                    double aspectRatio = (double) source.getHeight() / (double) source.getWidth();
+                                    int targetHeight = (int) (targetWidth * aspectRatio);
+                                    Bitmap result = Bitmap.createScaledBitmap(source, targetWidth, targetHeight, false);
+                                    if (result != source) {
+                                        // Same bitmap is returned if sizes are the same
+                                        source.recycle();
+                                    }
+                                    return result;
+                                }
+
+                                @Override
+                                public String key() {
+                                    return "transformation" + " desiredWidth";
+                                }
+                            })
+                            .into(imageView);
                 }
 
                 break;

@@ -165,6 +165,7 @@
     <string name="report_issue">Report Issue</string>
     <string name="nav_my_questions">My Questions</string>
     <string name="pick_source">Choose a source</string>
+    <string name="intent_select_image">Select an image file</string>
 
     <string-array name="image_sources">
         <item>Camera</item>
