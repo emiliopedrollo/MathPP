@@ -247,7 +247,7 @@ public class QuestionsListFragment extends Fragment implements SwipeRefreshLayou
                                     questionsList.setVisibility(View.GONE);
                                     questionsPlaceholder.setVisibility(View.VISIBLE);
                                     questionsPlaceholderProgressbar.setVisibility(View.GONE);
-                                    questionsPlaceholderTextView.setText(getResources().getString(R.string.no_categories_available));
+                                    questionsPlaceholderTextView.setText(getResources().getString(R.string.no_questions_available));
                                 }
 
                                 Collections.sort(adapter.questions, new Comparator<Question>() {
@@ -263,7 +263,7 @@ public class QuestionsListFragment extends Fragment implements SwipeRefreshLayou
                                 questionsList.setVisibility(View.GONE);
                                 questionsPlaceholder.setVisibility(View.VISIBLE);
                                 questionsPlaceholderProgressbar.setVisibility(View.GONE);
-                                questionsPlaceholderTextView.setText(getResources().getString(R.string.unable_retrieve_categories));
+                                questionsPlaceholderTextView.setText(getResources().getString(R.string.unable_retrieve_questions));
                             }
 
                             onLoadQuestionsFinish.onFinish(success);
