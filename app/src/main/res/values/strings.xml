@@ -135,7 +135,8 @@
     <string name="title_activity_write_post">WritePostActivity</string>
 
     <!-- Fetch/Input URL's -->
-    <string name="fetch_hostname" translatable="false">https://mathpp.emilio.pedrollo.nom.br</string>
+    <string name="fetch_hostname_prod" translatable="false">http://mathpp.smartcpc.kinghost.net</string>
+    <string name="fetch_hostname_dev" translatable="false">https://mathpp.emilio.pedrollo.nom.br</string>
     <string name="fetch_hostname_debug" translatable="false">https://mathpp.emilio.pedrollo.nom.br/app_dev.php</string>
 
     <string name="categories_fetch_uri" translatable="false">/categories</string>
@@ -169,6 +170,7 @@
     <string name="delete_image">Delete Image</string>
     <string name="yes">Yes</string>
     <string name="cancel">Cancel</string>
+    <string name="pref_key_enable_dev_server_xdebug">advanced_enable_dev_server_xdebug</string>
 
     <string-array name="image_sources">
         <item>Camera</item>

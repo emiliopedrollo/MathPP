@@ -4,6 +4,7 @@ import android.annotation.TargetApi;
 import android.app.Activity;
 import android.content.Context;
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.graphics.Bitmap;
 import android.graphics.Typeface;
 import android.net.ConnectivityManager;
@@ -11,6 +12,7 @@ import android.net.NetworkInfo;
 import android.os.AsyncTask;
 import android.os.Build;
 import android.os.Bundle;
+import android.preference.PreferenceManager;
 import android.support.annotation.Nullable;
 import android.support.design.widget.FloatingActionButton;
 import android.support.v4.app.ActivityCompat;
@@ -419,6 +421,9 @@ public class QuestionActivity extends AppCompatActivity {
     private void createBody(ViewGroup container, String body, BodyType bodyType){
         ArrayList<BodyPart> parts = parseBody(body);
 
+        SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(this);
+        Boolean dev = prefs.getBoolean(this.getString(R.string.pref_key_enable_dev_server),false);
+
         float scale = getResources().getDisplayMetrics().density;
 
         assert parts != null;
@@ -471,7 +476,11 @@ public class QuestionActivity extends AppCompatActivity {
 
                     final ViewGroup viewGroup = container;
 
-                    stringBuilder.append(getResources().getString(R.string.fetch_hostname));
+                    if (dev){
+                        stringBuilder.append(getResources().getString(R.string.fetch_hostname_dev));
+                    } else {
+                        stringBuilder.append(getResources().getString(R.string.fetch_hostname_prod));
+                    }
                     stringBuilder.append(entry.getContent());
 
                     Picasso.with(getBaseContext()).load(stringBuilder.toString())

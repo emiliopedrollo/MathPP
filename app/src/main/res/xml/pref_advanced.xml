@@ -21,7 +21,7 @@
     <SwitchPreference
         android:defaultValue="false"
         android:dependency="@string/pref_key_enable_dev_server"
-        android:key="advanced_enable_dev_server_xdebug"
+        android:key="@string/pref_key_enable_dev_server_xdebug"
         android:title="@string/pref_title_enable_xdebug" />
 
 </PreferenceScreen>

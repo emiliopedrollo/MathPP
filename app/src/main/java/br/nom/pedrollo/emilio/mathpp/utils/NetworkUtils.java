@@ -115,7 +115,8 @@ public class NetworkUtils {
                                        HashMap<String, String> params){
 
         SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(context);
-        Boolean xdebug = prefs.getBoolean(context.getString(R.string.pref_key_enable_dev_server),false);
+        Boolean dev = prefs.getBoolean(context.getString(R.string.pref_key_enable_dev_server),false);
+        Boolean xdebug = prefs.getBoolean(context.getString(R.string.pref_key_enable_dev_server_xdebug),false);
 
         try {
             InputStream is = null;
@@ -123,10 +124,14 @@ public class NetworkUtils {
             String host;
             URL url;
 
-            if (xdebug){
-                host = context.getResources().getString(R.string.fetch_hostname_debug);
-            } else{
-                host = context.getResources().getString(R.string.fetch_hostname);
+            if (dev) {
+                if (xdebug){
+                    host = context.getResources().getString(R.string.fetch_hostname_debug);
+                } else{
+                    host = context.getResources().getString(R.string.fetch_hostname_dev);
+                }
+            } else {
+                host = context.getResources().getString(R.string.fetch_hostname_prod);
             }
 
             try {
