@@ -4,6 +4,7 @@ import android.annotation.TargetApi;
 import android.app.Activity;
 import android.content.Context;
 import android.content.Intent;
+import android.graphics.Bitmap;
 import android.graphics.Typeface;
 import android.net.ConnectivityManager;
 import android.net.NetworkInfo;
@@ -32,6 +33,7 @@ import android.widget.RelativeLayout;
 import android.widget.TextView;
 
 import com.squareup.picasso.Picasso;
+import com.squareup.picasso.Transformation;
 
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -467,10 +469,33 @@ public class QuestionActivity extends AppCompatActivity {
 
                     container.addView(imageView);
 
+                    final ViewGroup viewGroup = container;
+
                     stringBuilder.append(getResources().getString(R.string.fetch_hostname));
                     stringBuilder.append(entry.getContent());
 
-                    Picasso.with(getBaseContext()).load(stringBuilder.toString()).into(imageView);
+                    Picasso.with(getBaseContext()).load(stringBuilder.toString())
+                        .transform(new Transformation() {
+                            @Override
+                            public Bitmap transform(Bitmap source) {
+
+                                double aspectRatio = (double) source.getHeight() / (double) source.getWidth();
+                                int targetWidth = viewGroup.getWidth();
+                                int targetHeight = (int) (targetWidth * aspectRatio);
+
+                                Bitmap result = Bitmap.createScaledBitmap(source, targetWidth, targetHeight, false);
+                                if (result != source) {
+                                    source.recycle();
+                                }
+
+                                return result;
+                            }
+
+                            @Override
+                            public String key() {
+                                return "transformation" + " desiredWidth";
+                            }
+                        }).into(imageView);
                     break;
             }
         }

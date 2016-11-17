@@ -8,8 +8,8 @@ import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
+import android.database.Cursor;
 import android.graphics.Bitmap;
-import android.graphics.BitmapFactory;
 import android.graphics.drawable.BitmapDrawable;
 import android.graphics.drawable.Drawable;
 import android.net.ConnectivityManager;
@@ -18,18 +18,17 @@ import android.net.Uri;
 import android.os.AsyncTask;
 import android.os.Build;
 import android.os.Bundle;
-import android.os.Environment;
 import android.preference.PreferenceManager;
 import android.provider.MediaStore;
 import android.provider.Settings;
+import android.support.annotation.NonNull;
 import android.support.v4.app.ActivityCompat;
 import android.support.v4.content.ContextCompat;
 import android.support.v4.content.FileProvider;
-import android.support.v4.view.ScrollingView;
 import android.support.v7.app.AlertDialog;
 import android.support.v7.app.AppCompatActivity;
-import android.support.v7.widget.DrawableUtils;
 import android.support.v7.widget.Toolbar;
+import android.util.Base64;
 import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
@@ -37,7 +36,6 @@ import android.view.View;
 import android.widget.EditText;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
-import android.widget.ScrollView;
 import android.widget.Toast;
 
 import com.getbase.floatingactionbutton.FloatingActionButton;
@@ -49,18 +47,19 @@ import com.squareup.picasso.Transformation;
 import org.json.JSONException;
 import org.json.JSONObject;
 
+import java.io.ByteArrayOutputStream;
 import java.io.File;
+import java.io.FileOutputStream;
 import java.io.IOException;
-import java.net.URI;
 import java.text.SimpleDateFormat;
+import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
+import java.util.List;
 
 import br.nom.pedrollo.emilio.mathpp.entities.Answer;
 import br.nom.pedrollo.emilio.mathpp.entities.Question;
 import br.nom.pedrollo.emilio.mathpp.utils.NetworkUtils;
-
-// FIXME: arrumar redimensionamento de imagem quando ela não cabe no Layout (por causa do teclado)
 
 public class WritePostActivity extends AppCompatActivity {
 
@@ -101,11 +100,15 @@ public class WritePostActivity extends AppCompatActivity {
 
     String imageFile;
 
+    List<Uri> images;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
 
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_write_post);
+
+        images = new ArrayList<>();
 
         Intent intent = getIntent();
         postType = intent.getStringExtra(INTENT_KEY_POST_TYPE);
@@ -244,7 +247,7 @@ public class WritePostActivity extends AppCompatActivity {
 
     @Override
     public void onRequestPermissionsResult(int requestCode,
-                                           String permissions[], int[] grantResults) {
+                                           @NonNull String permissions[], @NonNull int[] grantResults) {
         switch (requestCode) {
             case GRANT_REQUEST_READ_EXTERNAL_STORAGE_FOR_IMAGE:
                 // If request is cancelled, the result arrays are empty.
@@ -324,8 +327,8 @@ public class WritePostActivity extends AppCompatActivity {
                             LinearLayout.LayoutParams.WRAP_CONTENT));
 
 
-                    //int padding = (int) (8*scale + 0.5f);
-                    //imageView.setPadding(padding,padding,padding,padding);
+//                    int padding = (int) (8*scale + 0.5f);
+//                    imageView.setPadding(padding,padding,padding,padding);
 //                    imageView.setAdjustViewBounds(true);
 
                     postBody.addView(imageView);
@@ -342,6 +345,7 @@ public class WritePostActivity extends AppCompatActivity {
                                             imageView.setVisibility(View.GONE);
                                             postBody.removeView(imageView);
                                             showFab(fab_add_image);
+                                            images.remove((int)imageView.getTag());
                                         }
                                     })
                                     .setNegativeButton(R.string.cancel, new DialogInterface.OnClickListener() {
@@ -361,6 +365,8 @@ public class WritePostActivity extends AppCompatActivity {
                         image = Uri.parse(imageFile);
                     }
 
+                    images.add(image);
+                    imageView.setTag(images.indexOf(image));
 
                     try {
                         Bitmap bitmap = MediaStore.Images.Media.getBitmap(this.getContentResolver(), image);
@@ -372,8 +378,8 @@ public class WritePostActivity extends AppCompatActivity {
 
                         imageView.setMinimumHeight(targetHeight);
 
-                        Picasso.with(this).load(image).
-                                memoryPolicy(MemoryPolicy.NO_CACHE,MemoryPolicy.NO_STORE)
+                        Picasso.with(this).load(image)
+                                .memoryPolicy(MemoryPolicy.NO_CACHE,MemoryPolicy.NO_STORE)
                                 .transform(new Transformation() {
                                     @Override
                                     public Bitmap transform(Bitmap source) {
@@ -426,8 +432,86 @@ public class WritePostActivity extends AppCompatActivity {
         showAndHideFam();
     }
 
-    private void createImagePart(){
+    private String createBody(){
+        // GENERATE BODY STRING
 
+        EditText textEdit = (EditText) findViewById(R.id.post_text);
+
+        String boundary = "----"+NetworkUtils.generateBoundary();
+
+        StringBuilder stringBuilder = new StringBuilder();
+
+        stringBuilder.append("Boundary: ").append(boundary).append("\r\n");
+
+        // Text Part
+        stringBuilder.append(boundary).append("\r\n");
+        stringBuilder.append("Type: Text").append("\r\n").append("\r\n");
+        stringBuilder.append(textEdit.getText().toString()).append("\r\n");
+
+
+        // Image Part
+        Bitmap bitmap;
+        String mimeType;
+        ByteArrayOutputStream byteArrayOutputStream;
+        String encoded;
+        byte[] byteArray;
+        for (Uri image: images){
+            try{
+                bitmap = Picasso.with(this).load(image)
+                        .memoryPolicy(MemoryPolicy.NO_CACHE,MemoryPolicy.NO_STORE)
+                        .get();
+                byteArrayOutputStream = new ByteArrayOutputStream();
+                mimeType = GetMimeType(this,image);
+                bitmap.compress(getCompressFormat(mimeType),90,byteArrayOutputStream);
+                byteArray = byteArrayOutputStream .toByteArray();
+                encoded = Base64.encodeToString(byteArray, Base64.DEFAULT);
+
+                stringBuilder.append(boundary).append("\r\n");
+                stringBuilder.append("Type: Image").append("\r\n");
+                stringBuilder.append("Mime: ").append(mimeType).append("\r\n").append("\r\n");
+                stringBuilder.append(encoded);
+
+            } catch (IOException e){
+                e.printStackTrace();
+            }
+
+        }
+
+        stringBuilder.append(boundary);
+
+        return stringBuilder.toString();
+    }
+
+    private static String GetMimeType(Context context, Uri uriImage)
+    {
+        String strMimeType = null;
+
+        Cursor cursor = context.getContentResolver().query(uriImage,
+                new String[] { MediaStore.MediaColumns.MIME_TYPE },
+                null, null, null);
+
+        if (cursor != null) {
+            if (cursor.moveToNext()){
+                strMimeType = cursor.getString(0);
+            }
+            cursor.close();
+        }
+
+        return strMimeType;
+    }
+
+    private static Bitmap.CompressFormat getCompressFormat(String mimeType){
+        switch (mimeType){
+            case "image/jpeg":
+            case "image/jpg":
+                return Bitmap.CompressFormat.JPEG;
+            case "image/png":
+                return Bitmap.CompressFormat.PNG;
+            case "image/webp":
+                return Bitmap.CompressFormat.WEBP;
+            default:
+                return Bitmap.CompressFormat.JPEG;
+        }
     }
 
     private void setupHints(){
@@ -456,7 +540,7 @@ public class WritePostActivity extends AppCompatActivity {
         protected String doInBackground(Question... question) {
             HashMap<String, String> putArgs = new HashMap<>();
             putArgs.put("title", question[0].getTitle());
-            putArgs.put("text", question[0].getText());
+            putArgs.put("text", createBody());
             putArgs.put("author", question[0].getAuthor());
             putArgs.put("author_type", question[0].getAuthorType());
             putArgs.put("author_imei", question[0].getAuthorIMEI());
@@ -476,7 +560,7 @@ public class WritePostActivity extends AppCompatActivity {
         protected String doInBackground(Answer... answer) {
             HashMap<String, String> putArgs = new HashMap<>();
             putArgs.put("title", answer[0].getTitle());
-            putArgs.put("text", answer[0].getText());
+            putArgs.put("text", createBody());
             putArgs.put("author", answer[0].getAuthor());
             putArgs.put("author_type", answer[0].getAuthorType());
             putArgs.put("author_imei", answer[0].getAuthorIMEI());
@@ -490,7 +574,7 @@ public class WritePostActivity extends AppCompatActivity {
         }
     }
 
-    private void sendQuestion(){
+    private void sendPost(){
         ConnectivityManager connMgr = (ConnectivityManager) getBaseContext().getSystemService(Context.CONNECTIVITY_SERVICE);
         NetworkInfo networkInfo = connMgr.getActiveNetworkInfo();
         SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(this);
@@ -522,17 +606,6 @@ public class WritePostActivity extends AppCompatActivity {
                             R.string.sending_question_dialog_title:R.string.sending_answer_dialog_title)),
                     getString(R.string.sending_post_dialog_message), true);
 
-            // GENERATE BODY STRING
-            String boundary = "----"+NetworkUtils.generateBoundary();
-
-            StringBuilder stringBuilder = new StringBuilder();
-
-            stringBuilder.append("Boundary: ").append(boundary).append("\r\n");
-            stringBuilder.append(boundary).append("\r\n");
-            stringBuilder.append("Type: Text").append("\r\n").append("\r\n");
-            stringBuilder.append(textEdit.getText().toString()).append("\r\n");
-            stringBuilder.append(boundary);
-
             //TelephonyManager telephonyManager = (TelephonyManager)getSystemService(Context.TELEPHONY_SERVICE);
 
             // Todo: Create a common parent class to avoid this redundant mess!
@@ -543,7 +616,7 @@ public class WritePostActivity extends AppCompatActivity {
                 question.setAuthor( prefs.getString("display_name","Anonymous") );
                 question.setAuthorType( prefs.getString("user_category","student") );
                 question.setAuthorIMEI( Settings.Secure.getString(this.getContentResolver(), Settings.Secure.ANDROID_ID) );
-                question.setText( stringBuilder.toString() );
+//                question.setText( stringBuilder.toString() );
                 new putQuestionsTask(){
                     @Override
                     protected void onPostExecute(String serverResponse) {
@@ -561,7 +634,7 @@ public class WritePostActivity extends AppCompatActivity {
                 answer.setAuthor( prefs.getString("display_name","Anonymous") );
                 answer.setAuthorType( prefs.getString("user_category","student") );
                 answer.setAuthorIMEI( Settings.Secure.getString(this.getContentResolver(), Settings.Secure.ANDROID_ID) );
-                answer.setText( stringBuilder.toString() );
+//                answer.setText( stringBuilder.toString() );
                 new putAnswerTask(){
                     @Override
                     protected void onPostExecute(String serverResponse) {
@@ -601,7 +674,7 @@ public class WritePostActivity extends AppCompatActivity {
         int id = item.getItemId();
 
         if (id == R.id.send_new_post) {
-            sendQuestion();
+            sendPost();
             return true;
         }
 
