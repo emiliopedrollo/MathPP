@@ -629,9 +629,11 @@ public class WritePostActivity extends AppCompatActivity {
 //                question.setText( stringBuilder.toString() );
             new PutTask(){
 
+                @Nullable
                 @Override
-                protected void onPreExecute() {
+                protected PutTaskResult doInBackground(Post... posts) {
                     post.setText(createBody());
+                    return super.doInBackground(posts);
                 }
 
                 @Override
