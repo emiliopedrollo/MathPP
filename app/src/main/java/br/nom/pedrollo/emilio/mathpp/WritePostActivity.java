@@ -56,6 +56,8 @@ import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import br.nom.pedrollo.emilio.mathpp.entities.Answer;
 import br.nom.pedrollo.emilio.mathpp.entities.Post;
@@ -497,6 +499,12 @@ public class WritePostActivity extends AppCompatActivity {
                 strMimeType = cursor.getString(0);
             }
             cursor.close();
+        } else {
+            Pattern p = Pattern.compile(".*\\.([a-z]+)$");
+            Matcher m = p.matcher(uriImage.getLastPathSegment());
+            if (m.matches()){
+                strMimeType = "image/"+m.group(1);
+            }
         }
 
         return strMimeType;
