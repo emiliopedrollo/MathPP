@@ -10,9 +10,9 @@
     <!-- NOTE: EditTextPreference's summary should be set to its value by the activity code. -->
     <EditTextPreference
         android:capitalize="words"
-        android:defaultValue="@string/pref_default_display_name"
+        android:defaultValue="@string/prefs_default_value_display_name"
         android:inputType="textCapWords"
-        android:key="display_name"
+        android:key="@string/prefs_key_display_name"
         android:maxLines="1"
         android:selectAllOnFocus="true"
         android:singleLine="true"
@@ -20,22 +20,22 @@
 
     <EditTextPreference
         android:capitalize="none"
-        android:defaultValue="@string/pref_default_email"
+        android:defaultValue="@string/prefs_default_value_email"
         android:inputType="textEmailAddress"
-        android:key="user_email"
+        android:key="@string/prefs_key_user_email"
         android:maxLines="1"
         android:selectAllOnFocus="true"
         android:singleLine="true"
-        android:title="@string/pref_title_email" />
+        android:title="@string/pref_title_user_email" />
 
     <!-- NOTE: Hide buttons to simplify the UI. Users can touch outside the dialog to
          dismiss it. -->
     <!-- NOTE: ListPreference's summary should be set to its value by the activity code. -->
     <ListPreference
         android:defaultValue="student"
-        android:entries="@array/pref_user_type_titles"
-        android:entryValues="@array/pref_user_type_values"
-        android:key="user_category"
+        android:entries="@array/prefs_entries_user_type"
+        android:entryValues="@array/prefs_entries_values_user_type"
+        android:key="@string/prefs_key_user_category"
         android:negativeButtonText="@null"
         android:positiveButtonText="@null"
         android:title="@string/pref_title_user_type" />

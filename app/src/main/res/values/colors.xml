@@ -9,5 +9,7 @@
 
     <color name="lightGray">#cccccc</color>
 
+    <color name="lighterGray">#00f</color>
+
     <color name="grey_300">#e0e0e0</color>
 </resources>

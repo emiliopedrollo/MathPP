@@ -2,9 +2,12 @@ package br.nom.pedrollo.emilio.mathpp;
 
 import android.annotation.TargetApi;
 import android.app.Activity;
+import android.content.ContentValues;
 import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
+import android.database.Cursor;
+import android.database.sqlite.SQLiteDatabase;
 import android.graphics.Bitmap;
 import android.graphics.Typeface;
 import android.net.ConnectivityManager;
@@ -51,6 +54,8 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import br.nom.pedrollo.emilio.mathpp.adapters.AnswersAdapter;
+import br.nom.pedrollo.emilio.mathpp.contracts.VotesContract;
+import br.nom.pedrollo.emilio.mathpp.contracts.VotesContract.VoteEntry;
 import br.nom.pedrollo.emilio.mathpp.entities.Answer;
 import br.nom.pedrollo.emilio.mathpp.utils.NetworkUtils;
 import br.nom.pedrollo.emilio.mathpp.utils.transitions.ExpandTransition;
@@ -77,7 +82,7 @@ public class QuestionActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_question);
         Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
-        toolbar.setTitle(getString(R.string.app_name));
+        toolbar.setTitle(R.string.question);
         setSupportActionBar(toolbar);
 
         final Activity activity = this;
@@ -140,6 +145,7 @@ public class QuestionActivity extends AppCompatActivity {
 
     private class getAnswersTask extends AsyncTask<Void,Void,String> {
         @SuppressWarnings("ThrowFromFinallyBlock")
+        @Nullable
         @Override
         protected String doInBackground(Void... params) {
             HashMap<String, String> getParams = new HashMap<>();
@@ -150,8 +156,10 @@ public class QuestionActivity extends AppCompatActivity {
             String uri = getResources().getString(R.string.answers_fetch_uri) +
                     "/" + Integer.toString(questionId);
 
-            return NetworkUtils.getFromServer(getBaseContext(), uri,
+            NetworkUtils.ServerResponse response = NetworkUtils.getFromServer(getBaseContext(), uri,
                     NetworkUtils.Method.GET, getParams);
+
+            return (response != null) ? response.getBody() : null;
 
         }
     }
@@ -194,8 +202,13 @@ public class QuestionActivity extends AppCompatActivity {
 
             new getAnswersTask(){
                 @Override
-                protected void onPostExecute(String serverResponse) {
+                protected void onPostExecute(@Nullable String serverResponse) {
                     super.onPostExecute(serverResponse);
+
+                    if (serverResponse == null){
+                        Log.e("QUESTION_ACTIVITY","serverResponse is null at onPostExecute");
+                        return;
+                    }
 
                     NetworkUtils.getJSONObjectsFromServerResponse(serverResponse, new NetworkUtils.OnGetJSONFromServerResponseEvents() {
                         @Override
@@ -247,7 +260,13 @@ public class QuestionActivity extends AppCompatActivity {
                                 Collections.sort(adapter.answers, new Comparator<Answer>() {
                                     @Override
                                     public int compare(Answer o1, Answer o2) {
-                                        return  (o1.getId() < o2.getId())?1:-1;
+                                        if (o1.getScore() < o2.getScore()){
+                                            return 1;
+                                        } else if (o1.getScore() > o2.getScore()){
+                                            return -1;
+                                        } else {
+                                            return (o1.getId() < o2.getId())?1:-1;
+                                        }
                                     }
                                 });
 
@@ -276,32 +295,132 @@ public class QuestionActivity extends AppCompatActivity {
 
                 AnswersAdapter adapter = (AnswersAdapter) answerList.getAdapter();
 
-                createBody(holder.answerBody,adapter.answers.get(position).getText(),BodyType.ANSWER);
+                final Answer answer = adapter.answers.get(position);
 
-                View.OnClickListener onClickListener = new View.OnClickListener() {
+                createBody(holder.answerBody,answer.getText(),BodyType.ANSWER);
+
+                final OnVoteInterface onVoteInterface = new OnVoteInterface() {
                     @Override
-                    public void onClick(View v) {
-                        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP)
-                            if (v.getTag() == TAG) {
-                                ((ImageButton) v).setColorFilter(null);
-                                v.setTag(null);
-                            } else {
-                                viewHolder.thumbsUp.setColorFilter(null);
-                                viewHolder.thumbsUp.setTag(null);
-                                viewHolder.thumbsDown.setColorFilter(null);
-                                viewHolder.thumbsDown.setTag(null);
-                                ((ImageButton) v).setColorFilter(ContextCompat.getColor(getApplicationContext(),R.color.colorAccent));
-                                v.setTag(TAG);
+                    public void onVoteButtonClick(int value, ImageButton button) {
+                        if (button.getColorFilter() != null){
+                            button.setColorFilter(null);
+                            vote(0);
+                        } else {
+                            viewHolder.thumbsUp.setColorFilter(null);
+                            viewHolder.thumbsDown.setColorFilter(null);
+                            button.setColorFilter(ContextCompat
+                                    .getColor(getApplicationContext(),R.color.colorAccent));
+                            vote(value);
+                        }
+                    }
+                    private void vote(final int value){
+                        (new AsyncTask<Void,Void,String>(){
+                            @Override
+                            protected String doInBackground(Void... params) {
+
+                                VotesContract.VotesDbHelper dbHelper =
+                                        new VotesContract.VotesDbHelper(getBaseContext());
+                                SQLiteDatabase db = dbHelper.getWritableDatabase();
+
+                                // Query existent entry
+                                String[] projection = {
+                                        VoteEntry._ID
+                                };
+
+                                String selection = VoteEntry.COLUMN_NAME_ANSWER_ID + " = ?";
+                                String[] selectionArgs = { String.valueOf(answer.getId()) };
+                                Cursor cursor = db.query(
+                                        VoteEntry.TABLE_NAME,                     // The table to query
+                                        projection,                               // The columns to return
+                                        selection,                                // The columns for the WHERE clause
+                                        selectionArgs,                            // The values for the WHERE clause
+                                        null,                                     // don't group the rows
+                                        null,                                     // don't filter by row groups
+                                        null                                      // The sort order
+                                );
+
+                                // Delete existing entries
+                                if (cursor.getCount() > 0){
+                                    String deletion = VoteEntry.COLUMN_NAME_ANSWER_ID + " = ?";
+                                    String[] deletionArgs = { String.valueOf(answer.getId()) };
+                                    db.delete(VoteEntry.TABLE_NAME, selection, deletionArgs);
+                                }
+
+                                cursor.close();
+
+
+                                // Add new Entry
+                                ContentValues values = new ContentValues();
+                                values.put(VoteEntry.COLUMN_NAME_ANSWER_ID, answer.getId());
+                                values.put(VoteEntry.COLUMN_NAME_VALUE, value);
+                                db.insert(VoteEntry.TABLE_NAME,null,values);
+
+                                return null;
                             }
+                        }).execute();
                     }
                 };
 
-                holder.thumbsUp.setOnClickListener(onClickListener);
-                holder.thumbsDown.setOnClickListener(onClickListener);
+                View.OnClickListener onUpVote = new View.OnClickListener(){
+                    @Override
+                    public void onClick(View v) {
+                        onVoteInterface.onVoteButtonClick(1,(ImageButton)v);
+                    }
+                };
+                View.OnClickListener onDownVote = new View.OnClickListener(){
+                    @Override
+                    public void onClick(View v) {
+                        onVoteInterface.onVoteButtonClick(-1,(ImageButton)v);
+                    }
+                };
+
+
+                VotesContract.VotesDbHelper dbHelper =
+                        new VotesContract.VotesDbHelper(getBaseContext());
+                SQLiteDatabase db = dbHelper.getWritableDatabase();
+
+                // Query existent entry
+                String[] projection = {
+                        VoteEntry.COLUMN_NAME_VALUE
+                };
+
+                String selection = VoteEntry.COLUMN_NAME_ANSWER_ID + " = ?";
+                String[] selectionArgs = { String.valueOf(answer.getId()) };
+                Cursor cursor = db.query(
+                        VoteEntry.TABLE_NAME,                     // The table to query
+                        projection,                               // The columns to return
+                        selection,                                // The columns for the WHERE clause
+                        selectionArgs,                            // The values for the WHERE clause
+                        null,                                     // don't group the rows
+                        null,                                     // don't filter by row groups
+                        null                                      // The sort order
+                );
+
+                if (cursor.getCount() > 0){
+                    cursor.moveToFirst();
+                    int vote = cursor.getInt(cursor.getColumnIndexOrThrow(VoteEntry.COLUMN_NAME_VALUE));
+
+                    if (vote > 0){
+                        holder.thumbsUp.setColorFilter(ContextCompat
+                                .getColor(getApplicationContext(),R.color.colorAccent));
+                    } else if (vote < 0) {
+                        holder.thumbsDown.setColorFilter(ContextCompat
+                                .getColor(getApplicationContext(),R.color.colorAccent));
+                    }
+                }
+                cursor.close();
+
+
+                holder.thumbsUp.setOnClickListener(onUpVote);
+                holder.thumbsDown.setOnClickListener(onDownVote);
 
             }
         });
 
+    }
+
+    private interface OnVoteInterface{
+        void onVoteButtonClick(int value, ImageButton button);
     }
 
     @Override
@@ -490,7 +609,16 @@ public class QuestionActivity extends AppCompatActivity {
 
                                 double aspectRatio = (double) source.getHeight() / (double) source.getWidth();
                                 int targetWidth = viewGroup.getWidth();
+
+                                while (targetWidth == 0){
+                                    synchronized (viewGroup){
+                                        targetWidth = viewGroup.getWidth();
+                                    }
+                                }
+
                                 int targetHeight = (int) (targetWidth * aspectRatio);
+
+//                                if (targetHeight <= 0 || targetWidth <= 0) return null;
 
                                 Bitmap result = Bitmap.createScaledBitmap(source, targetWidth, targetHeight, false);
                                 if (result != source) {

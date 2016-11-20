@@ -33,6 +33,9 @@
                 android:name="android.app.searchable"
                 android:resource="@xml/searchable" />
         </activity>
+        <activity android:name=".WarmWelcome"
+                  android:label="@string/title_activity_welcome"
+                  android:theme="@style/AppTheme.NoActionBar"/>
         <activity
             android:name=".QuestionActivity"
             android:label="@string/title_activity_question"

@@ -42,8 +42,8 @@
     <string name="question_hidden">Question hidden</string>
     <string name="undo">Undo</string>
 
-    <string name="placeholder_username">Emílio B. Pedrollo</string>
-    <string name="placeholder_email">abcname@email.com</string>
+    <string name="placeholder_username" translatable="false">Emílio B. Pedrollo</string>
+    <string name="placeholder_email" translatable="false">abcname@email.com</string>
 
     <string name="title_activity_question">QuestionActivity</string>
     <string name="icon_student">Student Icon</string>
@@ -69,18 +69,18 @@
     </string>
 
     <string name="pref_title_display_name">Display name</string>
-    <string name="pref_default_display_name">John Smith</string>
+    <string name="prefs_default_value_display_name" translatable="false">John Smith</string>
 
-    <string name="pref_title_email">Email</string>
-    <string name="pref_default_email">example@domain.com</string>
+    <string name="pref_title_user_email">Email</string>
+    <string name="prefs_default_value_email" translatable="false">example@domain.com</string>
 
     <string name="pref_title_user_type">User Category</string>
-    <string-array name="pref_user_type_titles">
+    <string-array name="prefs_entries_user_type">
         <item>Student</item>
         <item>Monitor</item>
         <item>Teacher</item>
     </string-array>
-    <string-array name="pref_user_type_values">
+    <string-array name="prefs_entries_values_user_type">
         <item>student</item>
         <item>monitor</item>
         <item>teacher</item>
@@ -162,7 +162,7 @@
     <string name="empty_question_body">Please enter question…</string>
     <string name="empty_answer_title">Please enter answer title…</string>
     <string name="empty_answer_body">Please enter answer…</string>
-    <string name="pref_key_enable_dev_server">advanced_enable_dev_server</string>
+    <string name="pref_key_enable_dev_server" translatable="false">advanced_enable_dev_server</string>
     <string name="report_issue">Report Issue</string>
     <string name="nav_my_questions">My Questions</string>
     <string name="pick_source">Choose a source</string>
@@ -170,7 +170,28 @@
     <string name="delete_image">Delete Image</string>
     <string name="yes">Yes</string>
     <string name="cancel">Cancel</string>
-    <string name="pref_key_enable_dev_server_xdebug">advanced_enable_dev_server_xdebug</string>
+    <string name="pref_key_enable_dev_server_xdebug" translatable="false">advanced_enable_dev_server_xdebug</string>
+    <string name="error_while_posting_question">An error occurred while posting your question, please try again.</string>
+    <string name="title_activity_welcome">WarmWelcome</string>
+    <string name="welcome">Welcome</string>
+    <string name="lets_start">Let\'s start</string>
+    <string name="configure_new_user">Configure New User</string>
+    <string name="back">Back</string>
+    <string name="next">Next</string>
+    <string name="finish">Finish</string>
+    <string name="your_name">Your name</string>
+    <string name="role">Role</string>
+    <string name="name">Name</string>
+    <string name="let_us_know_how_we_should_call_you">Let us know how we should call you</string>
+    <string name="user_setup">User setup</string>
+    <string name="teacher">Teacher</string>
+    <string name="monitor">Monitor</string>
+    <string name="student">Student</string>
+    <string name="prefs_key_display_name" translatable="false">display_name</string>
+    <string name="prefs_key_user_email" translatable="false">user_email</string>
+    <string name="prefs_key_user_category" translatable="false">user_category</string>
+    <string name="question">Question</string>
+    <string name="send">Send</string>
 
     <string-array name="image_sources">
         <item>Camera</item>

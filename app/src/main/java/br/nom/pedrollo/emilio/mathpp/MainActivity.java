@@ -19,12 +19,14 @@ import android.os.Build;
 import android.os.Bundle;
 import android.preference.PreferenceManager;
 import android.support.annotation.NonNull;
+import android.support.annotation.Nullable;
 import android.support.customtabs.CustomTabsIntent;
 import android.support.design.widget.CoordinatorLayout;
 import android.support.design.widget.FloatingActionButton;
 import android.support.v4.app.ActivityCompat;
 import android.support.v4.content.ContextCompat;
 import android.support.v4.view.MenuItemCompat;
+import android.support.v7.app.ActionBar;
 import android.support.v7.widget.SearchView;
 import android.util.Log;
 import android.view.View;
@@ -61,10 +63,23 @@ public class MainActivity extends AppCompatActivity
         implements NavigationView.OnNavigationItemSelectedListener, AdapterView.OnItemClickListener {
 
     Boolean alreadyLoadedCategoriesOnce = false;
+    SharedPreferences prefs;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+
+        prefs = PreferenceManager.getDefaultSharedPreferences(this);
+
+//        prefs.edit().remove("FIRST_RUN").apply(); // Uncomment to show Welcome Screen
+
+        if (prefs.getBoolean("FIRST_RUN",true)){
+            Intent intent = new Intent(this, WarmWelcome.class);
+            intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_ACTIVITY_NEW_TASK);
+            startActivity(intent);
+            finish();
+        }
+
         setContentView(R.layout.activity_main);
         Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
@@ -93,7 +108,6 @@ public class MainActivity extends AppCompatActivity
         navigationView.setNavigationItemSelectedListener(this);
 
         populateMenuInfo(navigationView);
-        populateBuildString();
 
         GridView categoriesGrid = (GridView) findViewById(R.id.categories_grid);
         categoriesGrid.setOnItemClickListener(this);
@@ -101,6 +115,23 @@ public class MainActivity extends AppCompatActivity
         refreshCategoriesGrid();
 
         handleIntent(getIntent());
+
+        final FragmentManager fragmentManager = getFragmentManager ();
+
+        fragmentManager.addOnBackStackChangedListener(new FragmentManager.OnBackStackChangedListener() {
+            @Override
+            public void onBackStackChanged() {
+                if (fragmentManager.getBackStackEntryCount() == 0){
+                    try{
+                        ActionBar toolbar = getSupportActionBar();
+                        assert toolbar != null;
+                        toolbar.setTitle(getResources().getString(R.string.app_name));
+                    } catch(NullPointerException|AssertionError e){
+                        e.printStackTrace();
+                    }
+                }
+            }
+        });
 
     }
 
@@ -158,6 +189,14 @@ public class MainActivity extends AppCompatActivity
 
         bundle.putInt(QuestionsListFragment.CATEGORY,categoriesAdapter.categories.get(position).getId());
 
+        try{
+            ActionBar toolbar = getSupportActionBar();
+            assert toolbar != null;
+            toolbar.setTitle(categoriesAdapter.categories.get(position).getName());
+        } catch(NullPointerException|AssertionError e){
+            e.printStackTrace();
+        }
+
         questionsListFragment.setArguments(bundle);
         transaction.add(R.id.frame_container, questionsListFragment);
         transaction.addToBackStack(null).commit();
@@ -182,6 +221,7 @@ public class MainActivity extends AppCompatActivity
 
         @SuppressWarnings("ThrowFromFinallyBlock")
         @Override
+        @Nullable
         protected String doInBackground(Void... params) {
             HashMap<String, String> getParams = new HashMap<>();
             //getParams.put("limit","10");
@@ -189,8 +229,10 @@ public class MainActivity extends AppCompatActivity
             NetworkUtils.readTimeout = NetworkUtils.MEDIUM_TIMEOUT;
             NetworkUtils.connectionTimeout = NetworkUtils.MEDIUM_TIMEOUT;
 
-            return NetworkUtils.getFromServer(getApplicationContext(),
+            NetworkUtils.ServerResponse response = NetworkUtils.getFromServer(getApplicationContext(),
                     getResources().getString(R.string.categories_fetch_uri), NetworkUtils.Method.GET, getParams);
+
+            return (response != null) ? response.getBody() : null;
         }
     }
 
@@ -212,8 +254,13 @@ public class MainActivity extends AppCompatActivity
             new getCategoriesTask(){
 
                 @Override
-                public void onPostExecute(String serverResponse) {
+                public void onPostExecute(@Nullable String serverResponse) {
                     super.onPostExecute(serverResponse);
+
+                    if (serverResponse == null){
+                        Log.e("MAIN_ACTIVITY","serverResponse is null at onPostExecute");
+                        return;
+                    }
 
                     final CategoriesAdapter categoriesAdapter;
                     final GridView categoriesGrid = (GridView) findViewById(R.id.categories_grid);
@@ -292,8 +339,6 @@ public class MainActivity extends AppCompatActivity
     }
 
     private void populateMenuInfo(NavigationView navigationView){
-        SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(this);
-
         View headerLayout = navigationView.getHeaderView(0);
 
         TextView displayNameTextView = (TextView) headerLayout.findViewById(R.id.display_name);
@@ -302,6 +347,8 @@ public class MainActivity extends AppCompatActivity
 
         displayNameTextView.setText( prefs.getString("display_name","Anonymous") );
         userEmailTextView.setText( prefs.getString("user_email","") );
+
+        populateBuildString();
     }
 
     private void populateBuildString(){

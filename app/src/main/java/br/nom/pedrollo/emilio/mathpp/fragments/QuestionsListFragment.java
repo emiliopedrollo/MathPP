@@ -59,6 +59,8 @@ public class QuestionsListFragment extends Fragment implements SwipeRefreshLayou
 
     public final static String CATEGORY = "CATEGORY";
 
+    AsyncTask<CollectParams, Void, String> getQuestionsTask;
+
     private Boolean alreadyLoadedCategoriesOnce = false;
     private SwipeRefreshLayout swipeRefreshLayout;
     private RecyclerView questionsList;
@@ -106,19 +108,24 @@ public class QuestionsListFragment extends Fragment implements SwipeRefreshLayou
     public void onActivityResult(int requestCode, int resultCode, Intent data) {
         super.onActivityResult(requestCode, resultCode, data);
 
-        if (resultCode == WritePostActivity.POST_RESULT_SUCCESSFUL){
-            Intent intent = new Intent(getActivity(),QuestionActivity.class);
+        switch (resultCode){
+            case WritePostActivity.POST_RESULT_SUCCESSFUL:
+                Intent intent = new Intent(getActivity(),QuestionActivity.class);
 
-            intent.putExtra(QuestionActivity.MESSAGE_QUESTION_ID,data.getIntExtra(WritePostActivity.POST_NEW_ID,0));
-            intent.putExtra(QuestionActivity.MESSAGE_QUESTION_TITLE,data.getStringExtra("Title"));
-            intent.putExtra(QuestionActivity.MESSAGE_QUESTION_BODY,data.getStringExtra("Body"));
-            intent.putExtra(QuestionActivity.MESSAGE_QUESTION_AUTHOR,data.getStringExtra("Author"));
-            intent.putExtra(QuestionActivity.MESSAGE_QUESTION_AUTHOR_TYPE,data.getStringExtra("AuthorType"));
-            intent.putExtra(QuestionActivity.MESSAGE_QUESTION_N_ANSWERS,0);
+                intent.putExtra(QuestionActivity.MESSAGE_QUESTION_ID,data.getIntExtra(WritePostActivity.POST_NEW_ID,0));
+                intent.putExtra(QuestionActivity.MESSAGE_QUESTION_TITLE,data.getStringExtra("Title"));
+                intent.putExtra(QuestionActivity.MESSAGE_QUESTION_BODY,data.getStringExtra("Body"));
+                intent.putExtra(QuestionActivity.MESSAGE_QUESTION_AUTHOR,data.getStringExtra("Author"));
+                intent.putExtra(QuestionActivity.MESSAGE_QUESTION_AUTHOR_TYPE,data.getStringExtra("AuthorType"));
+                intent.putExtra(QuestionActivity.MESSAGE_QUESTION_N_ANSWERS,0);
 
-            ActivityCompat.startActivity(getActivity(),intent,null);
+                ActivityCompat.startActivity(getActivity(),intent,null);
 
-            loadQuestions(new CollectParams());
+                loadQuestions(new CollectParams());
+                break;
+            case WritePostActivity.POST_RESULT_FAILED:
+                Toast.makeText(getActivity(), R.string.error_while_posting_question,
+                        Toast.LENGTH_SHORT).show();
         }
 
     }
@@ -143,8 +150,9 @@ public class QuestionsListFragment extends Fragment implements SwipeRefreshLayou
         }
     }
 
-    private class getQuestionsTask extends AsyncTask<CollectParams,Void,String> {
+    private class GetQuestionsTask extends AsyncTask<CollectParams,Void,String> {
         @SuppressWarnings("ThrowFromFinallyBlock")
+        @Nullable
         @Override
         protected String doInBackground(CollectParams... params) {
             HashMap<String, String> getParams = new HashMap<>();
@@ -161,13 +169,27 @@ public class QuestionsListFragment extends Fragment implements SwipeRefreshLayou
                 uri.append(categoryId);
             }
 
-            return NetworkUtils.getFromServer(getContext(),uri.toString(),
+            NetworkUtils.ServerResponse response = NetworkUtils.getFromServer(getContext(),uri.toString(),
                     NetworkUtils.Method.GET, getParams);
+
+            return (response != null) ? response.getBody() : null;
         }
     }
 
     interface OnLoadQuestionsFinish{
         void onFinish(Boolean success);
+    }
+
+    @Override
+    public void onResume() {
+        super.onResume();
+        if (alreadyLoadedCategoriesOnce) loadQuestions(new CollectParams());
+    }
+
+    @Override
+    public void onPause() {
+        if (getQuestionsTask != null) getQuestionsTask.cancel(true);
+        super.onPause();
     }
 
     private void loadQuestions(CollectParams params){
@@ -191,15 +213,20 @@ public class QuestionsListFragment extends Fragment implements SwipeRefreshLayou
                 questionsPlaceholderTextView.setText(getResources().getString(R.string.loading_questions));
             }
 
-            new getQuestionsTask(){
+            getQuestionsTask = new GetQuestionsTask() {
                 @Override
-                protected void onPostExecute(String serverResponse) {
+                protected void onPostExecute(@Nullable String serverResponse) {
                     super.onPostExecute(serverResponse);
+
+                    if (serverResponse == null) {
+                        Log.e("LIST_FRAGMENT", "serverResponse is null at onPostExecute");
+                        return;
+                    }
 
                     NetworkUtils.getJSONObjectsFromServerResponse(serverResponse, new NetworkUtils.OnGetJSONFromServerResponseEvents() {
                         @Override
                         public void onJsonObjectFound(JSONObject jsonObject) {
-                            try{
+                            try {
 
                                 Boolean foundExisting = false;
                                 Integer id = jsonObject.getInt("id");
@@ -209,22 +236,22 @@ public class QuestionsListFragment extends Fragment implements SwipeRefreshLayou
                                 String authorType = jsonObject.getString("authorType");
                                 int answers = jsonObject.getInt("n_answers");
 
-                                Question question = new Question(id,title,text,author,authorType,answers);
+                                Question question = new Question(id, title, text, author, authorType, answers);
                                 QuestionsAdapter adapter = (QuestionsAdapter) questionsList.getAdapter();
 
-                                for (int i=0; i < adapter.questions.size(); i++){
-                                    if (adapter.questions.get(i).getId() ==  question.getId() ){
+                                for (int i = 0; i < adapter.questions.size(); i++) {
+                                    if (adapter.questions.get(i).getId() == question.getId()) {
                                         foundExisting = true;
-                                        adapter.questions.set(i,question);
+                                        adapter.questions.set(i, question);
                                         break;
                                     }
                                 }
-                                if (!foundExisting){
+                                if (!foundExisting) {
                                     adapter.questions.add(question);
                                 }
 
-                            } catch (JSONException e){
-                                Log.e("PARSE_JSON",e.getLocalizedMessage());
+                            } catch (JSONException e) {
+                                Log.e("PARSE_JSON", e.getLocalizedMessage());
                             }
                         }
 
@@ -233,13 +260,13 @@ public class QuestionsListFragment extends Fragment implements SwipeRefreshLayou
                             QuestionsAdapter adapter = (QuestionsAdapter) questionsList.getAdapter();
 
                             ProgressBar questionsPlaceholderProgressbar =
-                                    (ProgressBar)questionsPlaceholder.findViewById(R.id.questions_placeholder_progressbar);
+                                    (ProgressBar) questionsPlaceholder.findViewById(R.id.questions_placeholder_progressbar);
 
                             TextView questionsPlaceholderTextView =
                                     (TextView) questionsPlaceholder.findViewById(R.id.questions_placeholder_text_view);
 
-                            if (success){
-                                if (adapter.questions.size() > 0){
+                            if (success) {
+                                if (adapter.questions.size() > 0) {
                                     alreadyLoadedCategoriesOnce = true;
                                     questionsPlaceholder.setVisibility(View.GONE);
                                     questionsList.setVisibility(View.VISIBLE);
@@ -253,7 +280,7 @@ public class QuestionsListFragment extends Fragment implements SwipeRefreshLayou
                                 Collections.sort(adapter.questions, new Comparator<Question>() {
                                     @Override
                                     public int compare(Question o1, Question o2) {
-                                        return  (o1.getId() < o2.getId())?1:-1;
+                                        return (o1.getId() < o2.getId()) ? 1 : -1;
                                     }
                                 });
 

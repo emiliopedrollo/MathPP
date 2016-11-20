@@ -1,12 +1,8 @@
 package br.nom.pedrollo.emilio.mathpp.entities;
 
-public class Answer {
-    private int id;
-    private String title;
-    private String text;
-    private String author;
-    private String authorType;
-    private String authorIMEI;
+public class Answer extends Post {
+
+
     private int question;
     private int score;
 
@@ -21,56 +17,12 @@ public class Answer {
         this.score = score;
     }
 
-    public String getAuthor() {
-        return author;
-    }
-
-    public void setAuthor(String author) {
-        this.author = author;
-    }
-
-    public String getText() {
-        return text;
-    }
-
-    public void setText(String text) {
-        this.text = text;
-    }
-
-    public String getTitle() {
-        return title;
-    }
-
-    public void setTitle(String title) {
-        this.title = title;
-    }
-
     public int getScore() {
         return score;
     }
 
     public void setScore(int score) {
         this.score = score;
-    }
-
-    public String getAuthorType() {
-        return authorType;
-    }
-
-    public void setAuthorType(String authorType) {
-        this.authorType = authorType;
-    }
-
-    public String getAuthorIMEI() {
-        return authorIMEI;
-    }
-
-    public void setAuthorIMEI(String authorIMEI) {
-        this.authorIMEI = authorIMEI;
-    }
-
-    public int getId() {
-        return id;
     }
 
     public int getQuestion() {

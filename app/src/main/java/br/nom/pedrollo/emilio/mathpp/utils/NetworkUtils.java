@@ -9,6 +9,7 @@ import android.text.TextUtils;
 import android.util.Log;
 import android.webkit.CookieManager;
 
+import org.jetbrains.annotations.NotNull;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -65,6 +66,24 @@ public class NetworkUtils {
         }
     }
 
+    public static class ServerResponse {
+        private int code;
+        private String body;
+
+        ServerResponse(String body, int code){
+            this.body = body;
+            this.code = code;
+        }
+
+        public int getCode() {
+            return code;
+        }
+
+        public String getBody() {
+            return body;
+        }
+    }
+
     @NonNull
     private static String readIt(InputStream is) throws IOException{
         if (is != null) {
@@ -106,12 +125,12 @@ public class NetworkUtils {
 
     @Nullable
     @SuppressWarnings("unused")
-    public static String getFromServer(Context context, String uri){
+    public static ServerResponse getFromServer(Context context, String uri){
         return getFromServer(context,uri,Method.GET,new HashMap<String, String>());
     }
 
     @Nullable
-    public static String getFromServer(Context context, String uri, Method method,
+    public static ServerResponse getFromServer(Context context, String uri, Method method,
                                        HashMap<String, String> params){
 
         SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(context);
@@ -153,11 +172,14 @@ public class NetworkUtils {
                         conn.setRequestProperty("Cookie",
                                 TextUtils.join(";", cookieManager.getCookieStore().getCookies()));
                     }
+                    conn.setReadTimeout(600000); // 10 minute
+                    conn.setConnectTimeout(600000); // 10 minute
+                } else {
+                    conn.setReadTimeout(readTimeout);
+                    conn.setConnectTimeout(connectionTimeout);
                 }
 
 
-                conn.setReadTimeout(readTimeout);
-                conn.setConnectTimeout(connectionTimeout);
                 conn.setRequestMethod(method.getValue());
                 conn.setRequestProperty("Accept-Charset", "UTF-8");
                 conn.setRequestProperty("Accept-Language", "UTF-8");
@@ -177,11 +199,19 @@ public class NetworkUtils {
                         break;
                 }
                 conn.connect();
-                int response = conn.getResponseCode();
-                Log.d("GET_FROM_SERVER", "The HTTP Response is: " + response);
-                is = conn.getInputStream();
-
-                return readIt(is);
+                int code = conn.getResponseCode();
+                Log.d("GET_FROM_SERVER", "The HTTP Response is: " + code);
+                String response;
+                try {
+                    if (code == 200)
+                        is = conn.getInputStream();
+                    else
+                        is = conn.getErrorStream();
+                    response = readIt(is);
+                } catch (IOException e){
+                    response = null;
+                }
+                return new ServerResponse(response,code);
 
             } catch (AssertionError e) {
                 Log.e("GET_FROM_SERVER", "Could not open connection");
@@ -207,7 +237,7 @@ public class NetworkUtils {
         public void onFinish(Boolean success){}
     }
 
-    public static void getJSONObjectsFromServerResponse(String serverResponse,
+    public static void getJSONObjectsFromServerResponse(@NotNull String serverResponse,
                                                         OnGetJSONFromServerResponseEvents onGetJSONFromServerResponseEvents){
         Boolean finishedSuccessfully = false;
         try{

@@ -22,6 +22,7 @@ import android.preference.PreferenceManager;
 import android.provider.MediaStore;
 import android.provider.Settings;
 import android.support.annotation.NonNull;
+import android.support.annotation.Nullable;
 import android.support.v4.app.ActivityCompat;
 import android.support.v4.content.ContextCompat;
 import android.support.v4.content.FileProvider;
@@ -49,7 +50,6 @@ import org.json.JSONObject;
 
 import java.io.ByteArrayOutputStream;
 import java.io.File;
-import java.io.FileOutputStream;
 import java.io.IOException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
@@ -58,7 +58,9 @@ import java.util.HashMap;
 import java.util.List;
 
 import br.nom.pedrollo.emilio.mathpp.entities.Answer;
+import br.nom.pedrollo.emilio.mathpp.entities.Post;
 import br.nom.pedrollo.emilio.mathpp.entities.Question;
+import br.nom.pedrollo.emilio.mathpp.exceptions.ServerFaultException;
 import br.nom.pedrollo.emilio.mathpp.utils.NetworkUtils;
 
 public class WritePostActivity extends AppCompatActivity {
@@ -534,43 +536,48 @@ public class WritePostActivity extends AppCompatActivity {
         return true;
     }
 
-    private class putQuestionsTask extends AsyncTask<Question,Void,String> {
-        @SuppressWarnings("ThrowFromFinallyBlock")
-        @Override
-        protected String doInBackground(Question... question) {
-            HashMap<String, String> putArgs = new HashMap<>();
-            putArgs.put("title", question[0].getTitle());
-            putArgs.put("text", createBody());
-            putArgs.put("author", question[0].getAuthor());
-            putArgs.put("author_type", question[0].getAuthorType());
-            putArgs.put("author_imei", question[0].getAuthorIMEI());
-            putArgs.put("categories", "["+ Integer.toString(categoryId) +"]");
-
-            NetworkUtils.readTimeout = NetworkUtils.MEDIUM_TIMEOUT;
-            NetworkUtils.connectionTimeout = NetworkUtils.MEDIUM_TIMEOUT;
-
-            return NetworkUtils.getFromServer(getBaseContext(), getResources().getString(R.string.question_input_uri),
-                    NetworkUtils.Method.PUT, putArgs);
-        }
+    private class PutTaskResult{
+        public NetworkUtils.ServerResponse response;
+        public Post post;
     }
 
-    private class putAnswerTask extends AsyncTask<Answer,Void,String> {
-        @SuppressWarnings("ThrowFromFinallyBlock")
+    private class PutTask extends AsyncTask<Post,Void,PutTaskResult> {
         @Override
-        protected String doInBackground(Answer... answer) {
+        @Nullable
+        protected PutTaskResult doInBackground(Post... posts) {
+            Post post = posts[0];
+            String serverUri;
+
             HashMap<String, String> putArgs = new HashMap<>();
-            putArgs.put("title", answer[0].getTitle());
-            putArgs.put("text", createBody());
-            putArgs.put("author", answer[0].getAuthor());
-            putArgs.put("author_type", answer[0].getAuthorType());
-            putArgs.put("author_imei", answer[0].getAuthorIMEI());
-            putArgs.put("question", Integer.toString(questionId));
+            putArgs.put("title", post.getTitle());
+            putArgs.put("text", post.getText());
+            putArgs.put("author", post.getAuthor());
+            putArgs.put("author_type", post.getAuthorType());
+            putArgs.put("author_imei", post.getAuthorIMEI());
+
+
+            if (post instanceof Question){
+                serverUri = getResources().getString(R.string.question_input_uri);
+                putArgs.put("categories", "["+ Integer.toString(categoryId) +"]");
+            } else {
+                serverUri = getResources().getString(R.string.answer_input_uri);
+                putArgs.put("question", Integer.toString(questionId));
+            }
 
             NetworkUtils.readTimeout = NetworkUtils.MEDIUM_TIMEOUT;
             NetworkUtils.connectionTimeout = NetworkUtils.MEDIUM_TIMEOUT;
 
-            return NetworkUtils.getFromServer(getBaseContext(), getResources().getString(R.string.answer_input_uri),
+            PutTaskResult putTaskResult = new PutTaskResult();
+
+
+
+
+            putTaskResult.response = NetworkUtils.getFromServer(getBaseContext(), serverUri,
                     NetworkUtils.Method.PUT, putArgs);
+
+            putTaskResult.post = post;
+
+            return putTaskResult;
         }
     }
 
@@ -608,64 +615,69 @@ public class WritePostActivity extends AppCompatActivity {
 
             //TelephonyManager telephonyManager = (TelephonyManager)getSystemService(Context.TELEPHONY_SERVICE);
 
-            // Todo: Create a common parent class to avoid this redundant mess!
-
-            if (postType.equals(POST_TYPE_QUESTION)){
-                final Question question = new Question();
-                question.setTitle(  titleEdit.getText().toString()  );
-                question.setAuthor( prefs.getString("display_name","Anonymous") );
-                question.setAuthorType( prefs.getString("user_category","student") );
-                question.setAuthorIMEI( Settings.Secure.getString(this.getContentResolver(), Settings.Secure.ANDROID_ID) );
-//                question.setText( stringBuilder.toString() );
-                new putQuestionsTask(){
-                    @Override
-                    protected void onPostExecute(String serverResponse) {
-                        super.onPostExecute(serverResponse);
-                        returnIntent.putExtra("Title",question.getTitle());
-                        returnIntent.putExtra("Body",question.getText());
-                        returnIntent.putExtra("Author",question.getAuthor());
-                        returnIntent.putExtra("AuthorType",question.getAuthorType());
-                        onPostPutExecute(serverResponse);
-                    }
-                }.execute(question);
+            final Post post;
+            if (postType.equals(POST_TYPE_QUESTION)) {
+                post = new Question();
             } else {
-                Answer answer = new Answer();
-                answer.setTitle(  titleEdit.getText().toString()  );
-                answer.setAuthor( prefs.getString("display_name","Anonymous") );
-                answer.setAuthorType( prefs.getString("user_category","student") );
-                answer.setAuthorIMEI( Settings.Secure.getString(this.getContentResolver(), Settings.Secure.ANDROID_ID) );
-//                answer.setText( stringBuilder.toString() );
-                new putAnswerTask(){
-                    @Override
-                    protected void onPostExecute(String serverResponse) {
-                        super.onPostExecute(serverResponse);
-                        onPostPutExecute(serverResponse);
-                    }
-                }.execute(answer);
+                post = new Answer();
             }
+
+            post.setTitle(  titleEdit.getText().toString()  );
+            post.setAuthor( prefs.getString("display_name","Anonymous") );
+            post.setAuthorType( prefs.getString("user_category","student") );
+            post.setAuthorIMEI( Settings.Secure.getString(this.getContentResolver(), Settings.Secure.ANDROID_ID) );
+//                question.setText( stringBuilder.toString() );
+            new PutTask(){
+
+                @Override
+                protected void onPreExecute() {
+                    post.setText(createBody());
+                }
+
+                @Override
+                protected void onPostExecute(@Nullable PutTaskResult putTaskResult) {
+                    super.onPostExecute(putTaskResult);
+
+                    if (putTaskResult == null) {
+                        onPostPutExecute(POST_RESULT_FAILED);
+                        return;
+                    }
+
+                    if (putTaskResult.post instanceof Question){
+                        returnIntent.putExtra("Title",putTaskResult.post.getTitle());
+                        returnIntent.putExtra("Body",putTaskResult.post.getText());
+                        returnIntent.putExtra("Author",putTaskResult.post.getAuthor());
+                        returnIntent.putExtra("AuthorType",putTaskResult.post.getAuthorType());
+                    }
+
+                    try{
+                        if (putTaskResult.response.getCode() != 200)
+                            throw new ServerFaultException("Server has returned error code "+
+                                            putTaskResult.response.getCode());
+
+                        JSONObject jsonRoot = new JSONObject(putTaskResult.response.getBody());
+                        if (jsonRoot.getString("status").equals("OK")){
+                            int newId = jsonRoot.getInt("id");
+                            progress.dismiss();
+
+                            returnIntent.putExtra(POST_NEW_ID,newId);
+                            onPostPutExecute(POST_RESULT_SUCCESSFUL);
+                        }
+                    } catch (JSONException|ServerFaultException e){
+                        Log.e("PARSE_JSON",e.getMessage());
+                        onPostPutExecute(POST_RESULT_FAILED);
+                    }
+                }
+
+            }.execute(post);
 
         } else {
             Toast.makeText(getBaseContext(),R.string.no_internet_connection,Toast.LENGTH_SHORT).show();
         }
     }
 
-    private void onPostPutExecute(String serverResponse){
-        Boolean success = false;
-        try{
-            JSONObject jsonRoot = new JSONObject(serverResponse);
-            if (jsonRoot.getString("status").equals("OK")){
-                int newId = jsonRoot.getInt("id");
-                progress.dismiss();
-
-                returnIntent.putExtra(POST_NEW_ID,newId);
-                success = true;
-            }
-        } catch (JSONException e){
-            Log.e("PARSE_JSON",e.getLocalizedMessage());
-            success = false;
-        }
-
-        setResult((success)?POST_RESULT_SUCCESSFUL:POST_RESULT_FAILED,returnIntent);
+    private void onPostPutExecute(int result){
+        setResult(result,returnIntent);
         finish();
     }
 
